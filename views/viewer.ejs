@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewer</title>
+    <link rel="stylesheet" href="/stylesheets/main.css">
+    <link rel="stylesheet" href="/stylesheets/button.css">
+    <link rel="stylesheet" href="/stylesheets/annotorious.css">
+    <script defer src="/javascripts/fontawesome.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="//rawgithub.com/indrimuska/jquery-editable-select/master/dist/jquery-editable-select.min.js"></script>
+    <link href="//rawgithub.com/indrimuska/jquery-editable-select/master/dist/jquery-editable-select.min.css"
+        rel="stylesheet">
+    
+
+</head>
+
+<body>
+
+    <div id="page">
+        <div id="toolbar">
+            <div class="container">
+                <button title="Home" id="home-btn" class="btn btn-round-blue"><i class="fas fa-home"></i></button>
+                <button title="Zoom In" id="zoomin-btn" class="btn btn-round-green"><i
+                        class="fas fa-search-plus"></i></i></button>
+
+                        
+                <div id="zoom-buttons">
+                    <button title="Zoom In x2" value="2" class="btn-round-red">x2</button>
+                    <button title="Zoom In x4" value="4" class="btn-round-red">x4</button>
+                    <button title="Zoom In x16" value="16" class="btn-round-red">x16</button>
+                    <button title="Zoom In x32" value="32" class="btn-round-red">x32</button>
+                </div>
+
+        
+                <button title="Zoom Out" id="zoomout-btn" class="btn btn-round-green"><i
+                        class="fas fa-search-minus"></i></button>
+                <div title="Rotate" class="toolbar-heading"><i class="fas fa-sync-alt"></i></div>
+                <div class="slidercontainer">
+                    <input type="range" class="rs-range" name="slider-angle" id="slider-angle" min="-180" max="180" value=0>
+                </div>
+                <div id="angle-select-container" class="toolbar-heading">
+                    <select id="angle-select">
+                        <option value="-180">-180&#176;</option>
+                        <option value="-90">-90&#176;</option>
+                        <option value="0">0&#176;</option>
+                        <option value="90">90&#176;</option>
+                        <option value="180">180&#176;</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="seadragon-viewer"></div>
+
+    </div>
+
+
+    <script src="/javascripts/openseadragon.min.js"></script>
+    <script src="/javascripts/annotorious.min.js"></script>
+    <script src="/javascripts/openseadragon-scalebar.js"></script>
+    <script src="/javascripts/main.js"></script>
+
+</body>
+
+</html>

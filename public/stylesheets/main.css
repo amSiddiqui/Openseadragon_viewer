@@ -1,0 +1,55 @@
+html, body {
+    height: 100%;
+    padding: 0px;
+    margin: 0px;
+    overflow-x: hidden;
+}
+
+#toolbar {
+    width: 100%;
+    height: 5%;
+    background-color: #1f2833;
+}
+
+.container {
+    width: 100%;
+    height: 100%;
+    margin-left: 4em;
+    margin-right: 4em;
+    display: flex;
+    align-items: center;
+    
+}
+
+#page {
+    width: 100%;
+    height: 100%;
+}
+
+#seadragon-viewer {
+    width: 100%;
+    height: 95%;
+}
+
+.toolbar-heading {
+    padding: 8px 8px;
+    background-color: #1f2833;
+    color: white;
+    border: 2px solid #17954caa;
+    text-align: center;
+    border-radius: 20%;
+    margin: 0px 10px;
+}
+
+#angle-select-container {
+    border: 0;
+    color: black;
+}
+
+#angle-select-container #angle-select {
+    background-color: white;
+    text-align: center;
+    width: 50px;
+    border: 2px solid #17954caa;
+    border-radius: 20%;
+}
