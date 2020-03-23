@@ -10,4 +10,8 @@ router.get('/view', function (req, res, next) {
   res.render('viewer');
 });
 
+router.get('/comp', function (req, res, next) {
+  res.render('compare');
+});
+
 module.exports = router;

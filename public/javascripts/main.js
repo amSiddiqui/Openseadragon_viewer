@@ -158,6 +158,6 @@ $(document).ready(function () {
     $("#zoom-buttons").children().removeClass("btn-active");
   }
 
-  anno.makeAnnotable(viewer);
+  // anno.makeAnnotable(viewer);
   
 });
