@@ -19,6 +19,7 @@ $(document).ready(function () {
   var bm_zoom;
   var bm_goto;
   var annotations;
+  var max_zoomout;
 
   var viewer = OpenSeadragon({
     id: "seadragon-viewer",
@@ -49,7 +50,7 @@ $(document).ready(function () {
       1 / (2 * viewer.source.aspectRatio));
       viewer.viewport.zoomTo(2, center, true);
       viewer_is_new = true;
-      /* Ensure we receive update-viewport events, OpenSeadragon
+      /* Ensure we receive update-viewport evconsole.log("Zoom = "+event.zoom+", Max_Zoomout = "+max_zoomout);ents, OpenSeadragon
       #94 */
       viewer.drawer.viewer = viewer;
     });

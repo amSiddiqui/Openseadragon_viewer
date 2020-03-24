@@ -20,10 +20,16 @@
         <div id="toolbar">
             <div class="container">
                 <button title="Home" id="home-btn" class="btn btn-round-blue"><i class="fas fa-home"></i></button>
-                <button title="Zoom In" id="zoomin-btn" class="btn btn-round-green"><i
-                        class="fas fa-search-plus"></i></i></button>
-
                         
+                <div class="separator"></div>
+                <button title="Zoom In" id="zoomin-btn" class="btn btn-round-green"><i
+                    class="fas fa-search-plus"></i></i></button>
+
+                <button title="Zoom Out" id="zoomout-btn" class="btn btn-round-green"><i
+                        class="fas fa-search-minus"></i></button>
+
+                <div class="separator"></div>
+
                 <div id="zoom-buttons">
                     <button title="Zoom In 2x" value="2" style="border: 2px solid orange;" class="btn-round-red">2x</button>
                     <button title="Zoom In 5x" value="5" style="border: 2px solid red;" class="btn-round-red">5x</button>
@@ -31,15 +37,14 @@
                     <button title="Zoom In 20x" value="20" style="border: 2px solid  #66ff00;" class="btn-round-red">20x</button>
                     <button title="Zoom In 40x" value="40" style="border: 2px solid #0000f7;" class="btn-round-red">40x</button>
                 </div>
+                
+                <div class="separator"></div>
 
-        
-                <button title="Zoom Out" id="zoomout-btn" class="btn btn-round-green"><i
-                        class="fas fa-search-minus"></i></button>
-                <div title="Rotate" class="toolbar-heading"><i class="fas fa-sync-alt"></i></div>
-                <div class="slidercontainer">
+                        <!-- <div title="Rotate" class="toolbar-heading"><i class="fas fa-sync-alt"></i></div> -->
+                <div title="Rotate" class="slidercontainer">
                     <input type="range" class="rs-range" name="slider-angle" id="slider-angle" min="-180" max="180" value=0>
                 </div>
-                <div id="angle-select-container" class="toolbar-heading">
+                <div title="Choose Angle of Rotation" id="angle-select-container" class="toolbar-heading">
                     <select id="angle-select">
                         <option value="-180">-180&#176;</option>
                         <option value="-90">-90&#176;</option>
@@ -48,6 +53,8 @@
                         <option value="180">180&#176;</option>
                     </select>
                 </div>
+
+                <div class="separator"></div>
             </div>
         </div>
 
