@@ -84,12 +84,12 @@ $(document).ready(function () {
     pixelsPerMeter: 1000000,
     minWidth: "160px",
     location: OpenSeadragon.ScalebarLocation.BOTTOM_LEFT,
-    xOffset: 5,
-    yOffset: 10,
-    stayInsideImage: true,
-    color: "rgb(150, 150, 150)",
-    fontColor: "rgb(100, 100, 100)",
-    backgroundColor: "rgb(255, 255, 255)",
+    xOffset: 40,
+    yOffset: 20,
+    stayInsideImage: false,
+    color: "rgb(100, 100, 100)",
+    fontColor: "rgb(0, 0, 0)",
+    backgroundColor: "rgb(255, 255, 255, 0.8)",
     fontSize: "small",
     barThickness: 2
   });
