@@ -10,4 +10,10 @@ router.get('/view', function (req, res, next) {
   res.render('viewer');
 });
 
+router.get('/geo', function (req, res, next) {
+  res.render('geo');
+});
+
+
+
 module.exports = router;

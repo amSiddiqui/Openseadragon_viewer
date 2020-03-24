@@ -13,6 +13,9 @@
     <script src="//rawgithub.com/indrimuska/jquery-editable-select/master/dist/jquery-editable-select.min.js"></script>
     <link href="//rawgithub.com/indrimuska/jquery-editable-select/master/dist/jquery-editable-select.min.css"
         rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/geojs/0.12.2/geo.min.js" integrity="sha256-t9oLE+BFJc7iWaTIqMFk+8dYJn5kmfg/FIdKNuAxMII=" crossorigin="anonymous"></script>
+
 </head>
 
 <body>
@@ -55,17 +58,20 @@
                 </div>
 
                 <div class="separator"></div>
+
+                <button title="Home" id="draw-btn" class="btn btn-round-blue"><i class="fas fa-pen"></i></button>
             </div>
         </div>
 
-        <div id="seadragon-viewer"></div>
+        <div id="openseadragon-viewer"></div>
 
     </div>
 
 
     <script src="/javascripts/openseadragon.min.js"></script>
-    <script src="/javascripts/annotorious.min.js"></script>
     <script src="/javascripts/openseadragon-scalebar.js"></script>
+    <script src="/javascripts/geo.js"></script>
+    
     <script src="/javascripts/main.js"></script>
 
 </body>

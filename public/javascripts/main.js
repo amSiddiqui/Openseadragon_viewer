@@ -18,11 +18,9 @@ $(document).ready(function () {
   var bm_center;
   var bm_zoom;
   var bm_goto;
-  var annotations;
-  var max_zoomout;
 
   var viewer = OpenSeadragon({
-    id: "seadragon-viewer",
+    id: "openseadragon-viewer",
     prefixUrl: "//openseadragon.github.io/openseadragon/images/",
     showNavigator: true,
     animationTime: 0.5,
@@ -97,6 +95,9 @@ $(document).ready(function () {
   viewer.open(image);
   
   $("#angle-select").editableSelect({ effects: 'slide', filter: false });
+  setTimeout(function() {
+    $("#angle-select").val("0\u00B0");
+  }, 500);
   
   $("#slider-angle").on("input change", function(e) {
     viewer.viewport.setRotation(e.target.value);
@@ -157,8 +158,6 @@ $(document).ready(function () {
   function resetZoomButtons()
   {
     $("#zoom-buttons").children().removeClass("btn-active");
-  }
+  }  
 
-  // anno.makeAnnotable(viewer);
-  
 });
