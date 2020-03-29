@@ -184,3 +184,7 @@
 	background: #24b662;
 	top: 1px;
 }
+
+.cursor-crosshair {
+	cursor: crosshair;
+}

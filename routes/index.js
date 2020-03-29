@@ -14,6 +14,14 @@ router.get('/geo', function (req, res, next) {
   res.render('geo');
 });
 
+router.get('/mirador', function (req, res, next) {
+  res.render('mirador');
+});
+
+router.get('/support', function (req, res, next) {
+  res.render('support');
+});
+
 
 
 module.exports = router;

@@ -1,0 +1,25 @@
+#parent {
+    width: 250px;
+    height: 150px;
+    background-color: #ffd3b6;
+    position: absolute;
+    top: 150px;
+    left: 550px;
+}
+
+#child {
+    width: 200px;
+    height: 100px;
+    background-color: #ffaaa5;
+    position: relative;
+    top: 150px;
+    left: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: visibility 0s, opacity 0.3s linear;
+}
+
+#parent:hover > #child {
+    visibility: visible;
+    opacity: 1;
+}
