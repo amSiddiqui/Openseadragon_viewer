@@ -41,17 +41,9 @@ html, body {
     margin: 0px 10px;
 }
 
-#angle-select-container {
-    border: 0;
-    color: black;
-}
 
-#angle-select-container #angle-select {
-    background-color: white;
-    text-align: center;
-    width: 50px;
-    border: 2px solid #17954caa;
-    border-radius: 20%;
+.dropdown-item {
+    margin-left: 15px;
 }
 
 .separator

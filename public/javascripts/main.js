@@ -38,6 +38,8 @@ $(document).ready(function () {
   var overlay_index = 0;
   var screenshot;
   var current_overlay;
+  var rotation_enabled = false;
+  var rotator;
 
   var viewer = OpenSeadragon({
     id: "openseadragon-viewer",
@@ -92,7 +94,8 @@ $(document).ready(function () {
       }, 200);
       bm_goto = false;
     }
-    updateRotation('0');
+    rotator.setValue(0);
+    updateRotation(0);
     resetZoomButtons();
   });
 
@@ -146,31 +149,9 @@ $(document).ready(function () {
 
   });
 
-  $("#angle-select").editableSelect({
-    effects: 'slide',
-    filter: false
-  });
-  setTimeout(function () {
-    $("#angle-select").val("0\u00B0");
-  }, 500);
-
-  $("#slider-angle").on("input change", function (e) {
-    viewer.viewport.setRotation(e.target.value);
-    $("#angle-select").val(e.target.value + "\u00B0");
-  });
-
-  $("#angle-select").on('input', function (event) {
-    updateRotation(event.target.value);
-  });
-
-  $("#angle-select").on('select.editable-select', function (event) {
-    updateRotation(event.target.value);
-  });
-
   $("#zoomin-btn").click(function () {
     resetZoomButtons();
   });
-
 
   $("#zoomout-btn").click(function () {
     resetZoomButtons();
@@ -183,25 +164,8 @@ $(document).ready(function () {
     viewer.viewport.zoomTo(zoomVal);
   });
 
-  function updateRotation(val) {
-    degSymbol = val.slice(-1);
-    if (isNaN(degSymbol)) {
-      val = val.slice(0, val.length - 1);
-    }
-    if (!isNaN(val)) {
-      deg = parseInt(val);
-      if (!isNaN(deg)) {
-        if (deg < -180) {
-          deg = -180;
-        } else if (deg > 180) {
-          deg = 180;
-        }
-
-        $("#angle-select").val(deg);
-        $("#slider-angle").val(deg);
-        viewer.viewport.setRotation(deg);
-      }
-    }
+  function updateRotation(deg) {
+    viewer.viewport.setRotation(deg);
   }
 
   function resetZoomButtons() {
@@ -380,6 +344,42 @@ $(document).ready(function () {
     }
   });
 
+  $("#rotation-selector").roundSlider({
+    radius: 60,
+    sliderType: "min-range",
+    value: 50,
+    svgMode: true,
+    tooltipFormat: tooltipInDegrees,
+    change: updateRotationSlider,
+    drag: updateRotationSlider,
+    min: 0,
+    max: 180
+  });
+
+  
+
+  rotator = $("#rotation-selector").data("roundSlider");
+
+  function tooltipInDegrees(args) {
+    return args.value + "\u00B0"; 
+  }
+
+  function updateRotationSlider(e)
+  {
+    updateRotation(e.value);
+  }
+  
+
+  $("#rotation-btn").click(function(event) {
+      if (rotation_enabled){
+        $("#rotation-menu").removeClass("is-active");
+      }else{
+        $("#rotation-menu").addClass("is-active");
+      }
+      rotation_enabled = !rotation_enabled;
+  });
+  
+
   $("#annotation-save-btn").click(function(){
     $("#annotation-modal").removeClass("is-active");
 
@@ -405,6 +405,22 @@ $(document).ready(function () {
         $("#annotation-modal").removeClass("is-active");
         closeAnnotation();
         break;
+    }
+  });
+
+
+  // Fix tooltip edit not in center
+  $("span .rs-tooltip .rs-tooltip-text edit").css({
+    "margin-top": -15.5,
+    "margin-left": -16.65
+  });
+
+  $(document).click(function(event) {
+    var id = event.target.id;
+    if ($(event.target).closest("#rotation-btn").length == 0 && $(event.target).closest("#rotation-menu").length == 0)
+    {
+      $("#rotation-menu").removeClass("is-active");
+      rotation_enabled = false;
     }
   });
 });
