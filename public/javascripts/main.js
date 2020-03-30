@@ -37,6 +37,7 @@ $(document).ready(function () {
   var selection_enabled = false;
   var overlay_index = 0;
   var screenshot;
+  var current_overlay;
 
   var viewer = OpenSeadragon({
     id: "openseadragon-viewer",
@@ -67,7 +68,7 @@ $(document).ready(function () {
       1 / (2 * viewer.source.aspectRatio));
     viewer.viewport.zoomTo(2, center, true);
     viewer_is_new = true;
-    
+
     viewer.drawer.viewer = viewer;
   });
 
@@ -207,80 +208,203 @@ $(document).ready(function () {
     $("#zoom-buttons").children().removeClass("btn-active");
   }
 
-  function addOverlay(x, y, h, w) {
+  function addOverlay(x, y, h, w, toolTipText, elementStyle) {
     var ele = document.createElement("div");
     ele.id = "overlay-" + overlay_index;
     overlay_index++;
-    ele.className = "highlight";
+    $(ele).css(elementStyle);
+    console.log(ele);
     viewer.addOverlay({
       element: ele,
       location: new OpenSeadragon.Rect(x, y, h, w)
     });
 
-
-    var tooltip = document.createElement("div");
-    $(tooltip).append("This is some example text");
-    $(tooltip).css({
-      "width": "250px",
-      "height": "100px",
-      "padding": "10px 20px",
-      "display": "none",
-      "background-color": "#fff"
-    });
-
-
-    $("#page").append(tooltip);
-
-    tooltip = $(tooltip);
-
-    $(ele).hover(function(e) {
-      var mouseX = e.pageX + 20,
+    if (toolTipText.length != 0)
+    {
+      var tooltip = document.createElement("div");
+      $(tooltip).append(toolTipText);
+      $(tooltip).css({
+        "width": "250px",
+        "height": "100px",
+        "padding": "10px 20px",
+        "display": "none",
+        "background-color": "#fff"
+      });
+  
+  
+      $("#page").append(tooltip);
+  
+      tooltip = $(tooltip);
+  
+      $(ele).hover(function (e) {
+        var mouseX = e.pageX + 20,
           mouseY = e.pageY + 20,
           tipWidth = tooltip.width(),
           tipHeight = tooltip.height(),
-
+  
           tipVisX = $(window).width() - (mouseX + tipWidth),
-
+  
           tipVisY = $(window).height() - (mouseY + tipHeight);
-
-          if (tipVisX < 20)
-          {
-            mouseX = e.pageX - tipWidth + 20;
-          }
-          if (tipVisY < 20)
-          {
-            mouseY = e.pageY - tipHeight - 20;
-          }
-
-          tooltip.css({
-            top: mouseY,
-            left: mouseX,
-            position: 'absolute'
-          });
-
-          tooltip.show().css({opacity: 0.8});
-    }, function() {
-      tooltip.hide();
-    });
-
-
+  
+        if (tipVisX < 20) {
+          mouseX = e.pageX - tipWidth + 20;
+        }
+        if (tipVisY < 20) {
+          mouseY = e.pageY - tipHeight - 20;
+        }
+  
+        tooltip.css({
+          top: mouseY,
+          left: mouseX,
+          position: 'absolute'
+        });
+  
+        tooltip.show().css({
+          opacity: 0.8
+        });
+      }, function () {
+        tooltip.hide();
+      });
+    }
   }
 
-
-  function onSelection(rect) {
+  function closeAnnotation()
+  {
     selection_enabled = false;
     selection.disable();
     $("#draw-btn").removeClass('btn-active');
     $("canvas").removeClass('cursor-crosshair');
-
-    addOverlay(rect.x, rect.y, rect.width, rect.height);
+  }
+  
+  function onSelection(rect) {
+    $("#annotation-modal").addClass("is-active");
+    closeAnnotation();
+    current_overlay = rect;
   }
 
 
-  $("#screenshot-btn").click(function(){
+  $(".annotation-modal-close ").click(function () {
+    $("#annotation-modal").removeClass("is-active");
+    closeAnnotation();
+  });
+
+  $("#screenshot-btn").click(function () {
     screenshot.takeScreenshot();
   });
 
 
-  
+  var annotation_border_picker = Pickr.create({
+    el: '#annotation-border-picker',
+    theme: 'nano', // or 'monolith', or 'nano'
+    default: "blue",
+
+    swatches: [
+      'rgba(244, 67, 54, 1)',
+      'rgba(233, 30, 99, 0.95)',
+      'rgba(156, 39, 176, 0.9)',
+      'rgba(103, 58, 183, 0.85)',
+      'rgba(63, 81, 181, 0.8)',
+      'rgba(33, 150, 243, 0.75)',
+      'rgba(3, 169, 244, 0.7)',
+      'rgba(0, 188, 212, 0.7)',
+      'rgba(0, 150, 136, 0.75)',
+      'rgba(76, 175, 80, 0.8)',
+      'rgba(139, 195, 74, 0.85)',
+      'rgba(205, 220, 57, 0.9)',
+      'rgba(255, 235, 59, 0.95)',
+      'rgba(255, 193, 7, 1)'
+    ],
+
+    components: {
+
+      // Main components
+      preview: true,
+      opacity: true,
+      hue: true,
+
+      // Input / output Options
+      interaction: {
+        hex: false,
+        rgba: false,
+        hsla: false,
+        hsva: false,
+        cmyk: false,
+        input: false,
+        clear: true,
+        save: true
+      }
+    }
+  });
+
+
+  var annotation_color_picker = Pickr.create({
+    el: '#annotation-background-picker',
+    theme: 'nano', // or 'monolith', or 'nano'
+    default: "#ffffff55",
+
+    swatches: [
+      'rgba(244, 67, 54, 1)',
+      'rgba(233, 30, 99, 0.95)',
+      'rgba(156, 39, 176, 0.9)',
+      'rgba(103, 58, 183, 0.85)',
+      'rgba(63, 81, 181, 0.8)',
+      'rgba(33, 150, 243, 0.75)',
+      'rgba(3, 169, 244, 0.7)',
+      'rgba(0, 188, 212, 0.7)',
+      'rgba(0, 150, 136, 0.75)',
+      'rgba(76, 175, 80, 0.8)',
+      'rgba(139, 195, 74, 0.85)',
+      'rgba(205, 220, 57, 0.9)',
+      'rgba(255, 235, 59, 0.95)',
+      'rgba(255, 193, 7, 1)'
+    ],
+
+    components: {
+
+      // Main components
+      preview: true,
+      opacity: true,
+      hue: true,
+
+      // Input / output Options
+      interaction: {
+        hex: false,
+        rgba: false,
+        hsla: false,
+        hsva: false,
+        cmyk: false,
+        input: false,
+        clear: true,
+        save: true
+      }
+    }
+  });
+
+  $("#annotation-save-btn").click(function(){
+    $("#annotation-modal").removeClass("is-active");
+
+    var text = $("#annotation-text").val();
+    var width = $("#border-width-input").val();
+    var background_color = annotation_color_picker.getColor().toHEXA().toString();
+    var border_color = annotation_border_picker.getColor().toHEXA().toString();
+    console.log(current_overlay);
+    addOverlay(current_overlay.x, current_overlay.y, current_overlay.width, current_overlay.height, text, {"border": width+"px solid "+border_color, "background-color": background_color});
+
+
+  });
+
+  $("#border-width-input").on('change', function(event) {
+    var height = event.target.value;
+    $("#border-example").css("height", height);
+  });
+
+  // Document keys
+  $(document).keydown(function (e) {
+    switch (e.keyCode) {
+      case 27:
+        $("#annotation-modal").removeClass("is-active");
+        closeAnnotation();
+        break;
+    }
+  });
 });

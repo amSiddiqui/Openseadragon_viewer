@@ -5,9 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Viewer</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
     <link rel="stylesheet" href="/stylesheets/main.css">
     <link rel="stylesheet" href="/stylesheets/button.css">
-    <script defer src="/javascripts/fontawesome.min.js"></script>
+    
+
+    <link href="//rawgithub.com/indrimuska/jquery-editable-select/master/dist/jquery-editable-select.min.css"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/> 
+
+    
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"
         integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
     <script src="//rawgithub.com/indrimuska/jquery-editable-select/master/dist/jquery-editable-select.min.js"></script>
@@ -16,36 +24,32 @@
     <script src="/javascripts/openseadragon.min.js"></script>
     <script src="/javascripts/openseadragonselection.js"></script>
     <script src="/javascripts/openseadragon-scalebar.js"></script>
-    
-    
+
+
     <script src="/javascripts/canvas-toBlob.js"></script>
     <script src="/javascripts/FileSaver.js"></script>
     <script src="/javascripts/openseadragonScreenshot.js"></script>
+    <script defer src="/javascripts/fontawesome.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
     
-    
+
     <script src="/javascripts/main.js"></script>
-
-
-
-    <link href="//rawgithub.com/indrimuska/jquery-editable-select/master/dist/jquery-editable-select.min.css"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+    
 </head>
 
 <body>
     <div id="page">
         <div id="toolbar">
-            <div class="container">
-                <button title="Home" id="home-btn" class="btn btn-round-blue"><i class="fas fa-home"></i></button>
-
+            <nav class="toolbar-container" role="navigation" aria-label="main navigation">
+                <button title="Home" id="home-btn" class=" btn btn-round-blue"><i class="fas fa-home"></i></button>
                 <div class="separator"></div>
-                <button title="Zoom In" id="zoomin-btn" class="btn btn-round-green"><i
+                <button title="Zoom In" id="zoomin-btn" class=" btn btn-round-green"><i
                         class="fas fa-search-plus"></i></button>
 
-                <button title="Zoom Out" id="zoomout-btn" class="btn btn-round-green"><i
+                <button title="Zoom Out" id="zoomout-btn" class=" btn btn-round-green"><i
                         class="fas fa-search-minus"></i></button>
 
-                <div class="separator"></div>
+                <div class="separator "></div>
 
                 <div id="zoom-buttons">
                     <button title="Zoom In 2x" value="2" style="border: 2px solid orange;"
@@ -60,14 +64,15 @@
                         class="btn-round-red">40x</button>
                 </div>
 
-                <div class="separator"></div>
+
+                <div class="separator "></div>
 
                 <!-- <div title="Rotate" class="toolbar-heading"><i class="fas fa-sync-alt"></i></div> -->
-                <div title="Rotate" class="slidercontainer">
+                <div title="Rotate" class="slidercontainer ">
                     <input type="range" class="rs-range" name="slider-angle" id="slider-angle" min="-180" max="180"
                         value=0>
                 </div>
-                <div title="Choose Angle of Rotation" id="angle-select-container" class="toolbar-heading">
+                <div title="Choose Angle of Rotation" id="angle-select-container" class=" toolbar-heading">
                     <select id="angle-select">
                         <option value="-180">-180&#176;</option>
                         <option value="-90">-90&#176;</option>
@@ -79,15 +84,59 @@
 
                 <div class="separator"></div>
 
-                <button title="Annotation" id="draw-btn" class="btn btn-round-blue"><i class="fas fa-pen"></i></button>
-                
+                <button title="Annotation" id="draw-btn" class=" btn btn-round-blue"><i class="fas fa-pen"></i></button>
                 <div class="separator"></div>
 
-                <button title="Screenshot" id="screenshot-btn" class="btn btn-round-blue"><i class="fas fa-camera"></i></button>
-            </div>
+                <button title="Screenshot" id="screenshot-btn" class=" btn btn-round-blue"><i
+                        class="fas fa-camera"></i></button>
+                
+                <button id="hamburger" ><i class="fas fa-bars"></i></button>
+            </nav>
         </div>
 
         <div id="openseadragon-viewer">
+        </div>
+
+
+        <div class="modal " id="annotation-modal">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">Annotation Setting</p>
+                    <button class="delete annotation-modal-close" arai-label="close"></button>
+                </header>
+                <section class="modal-card-body">
+                    <div class="container">
+                        <label for="annotation-text" class="label">Annotation Text</label>
+                        <textarea name="annotation-text" id="annotation-text" cols="15" rows="5" class="textarea"></textarea>
+                        <div class="columns has-text-centered">
+                            <div class="column is-3">
+                                <label class="label">Border Color</label>
+                                <div id="annotation-border-picker" class="color-picker"></div>
+                            </div>
+                            <div class="column is-5">
+                                <label class="label">Border Width</label>
+                                <div class="columns">
+                                    <div class="column is-6">
+                                        <input type="number" name="border-width" id="border-width-input" class="input is-rounded" min = "0" max = "15" value="4">
+                                    </div>
+                                    <div class="column">
+                                        <div id="border-example"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <label class="label">Background Color</label>
+                                <div id="annotation-background-picker" class="color-picker"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <footer class="modal-card-foot">
+                    <button class="button is-success" id="annotation-save-btn">Add Annotation</button>
+                    <button class="button annotation-modal-close">Cancel</button>
+                </footer>
+            </div>
         </div>
 
     </div>

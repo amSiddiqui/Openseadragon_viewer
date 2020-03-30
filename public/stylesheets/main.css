@@ -11,14 +11,14 @@ html, body {
     background-color: #1f2833;
 }
 
-.container {
+.toolbar-container {
     width: 100%;
     height: 100%;
     margin-left: 4em;
     margin-right: 4em;
     display: flex;
     align-items: center;
-    
+    background-color: #1f2833;
 }
 
 #page {
@@ -62,8 +62,58 @@ html, body {
     margin: 0px 10px;
 }
 
-.highlight {
-    opacity: 0.4;
-    outline: 12px auto blue;
+
+#border-example {
+    width: 100%;
+    height: 4px;
+    background-color: black;
+    margin-top: 15px;
+}
+
+#hamburger {
+    display: none;
+    width: 90px;
+    height: 40px;
+    border: none;
+    box-shadow: none;
+}
+
+#hamburger:active {
+    background-color: #aacfcf;
+}
+
+.fa-bars {
+    font-size: 25px;
+}
+
+#annotations-menu-container.options-menu {
+    position: relative;
+    top: 0px;
+    width: 100px;
+    height: 150px;
     background-color: white;
+}
+
+.modal-background {
+    opacity: 0.2;
+}
+
+@media screen and (max-width: 1160px) {
+    .separator {
+        margin: 0px 0px;
+    }
+
+    .toolbar-container {
+        margin-left: 0;
+    }
+}
+
+@media screen and (max-width: 1000px) {
+    .toolbar-container button {display: none}
+    .toolbar-container div {display: none;}
+    #hamburger {
+        position: absolute;
+        display: block;
+        right: 0;
+    }
 }
