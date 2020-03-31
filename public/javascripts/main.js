@@ -36,8 +36,8 @@ $(document).ready(function () {
   var selection;
   var selection_enabled = false; // Stores wheather the user is in the annotation selection mode
   var overlay_index = 0; // Stores the current overlay index
-  var screenshot; // Stores the Screenshot plugin
   var current_overlay; // Stores the Rect of the current overlay that is drawn
+  var overlays = []; // Stores all the overlays created
   var rotation_enabled = false; // Stores whether the rotation slider is visible
   var rotator; // Stores the Rotation slider data
   var annotation_border_picker; // Stores the Overlay Border color data
@@ -136,13 +136,6 @@ $(document).ready(function () {
     allowRotation: false,
   });
 
-  // Screenshot plugin
-  screenshot = viewer.screenshot({
-    showOptions: true, // Default is false
-    keyboardShortcut: 'p', // Default is null
-    showScreenshotControl: false // Default is true
-  });
-
 
   // Other tool Initialization
 
@@ -170,45 +163,36 @@ $(document).ready(function () {
 
   rotator = $("#rotation-selector").data("roundSlider");
 
-
   // Fix tooltip not in center
   setTimeout(function () {
     $(".rs-tooltip").css({
       "margin-top": "-15.5px",
       "margin-left": "-16.652px"
     });
-  }, 500);
-
+  }, 1000);
 
   // Color picker initialization
   // Overlay Border
   annotation_border_picker = Pickr.create({
     el: '#annotation-border-picker',
     theme: 'nano', // or 'monolith', or 'nano'
-    default: "blue",
+    default: "red",
 
     swatches: [
-      'rgba(244, 67, 54, 1)',
-      'rgba(233, 30, 99, 0.95)',
-      'rgba(156, 39, 176, 0.9)',
-      'rgba(103, 58, 183, 0.85)',
-      'rgba(63, 81, 181, 0.8)',
-      'rgba(33, 150, 243, 0.75)',
-      'rgba(3, 169, 244, 0.7)',
-      'rgba(0, 188, 212, 0.7)',
-      'rgba(0, 150, 136, 0.75)',
-      'rgba(76, 175, 80, 0.8)',
-      'rgba(139, 195, 74, 0.85)',
-      'rgba(205, 220, 57, 0.9)',
-      'rgba(255, 235, 59, 0.95)',
-      'rgba(255, 193, 7, 1)'
+      'red',
+      'yellow',
+      'green',
+      'black',
+      'orange',
+      'purple',
+      'gray'
     ],
 
     components: {
 
       // Main components
       preview: true,
-      opacity: true,
+      opacity: false,
       hue: true,
 
       // Input / output Options
@@ -229,7 +213,7 @@ $(document).ready(function () {
   annotation_color_picker = Pickr.create({
     el: '#annotation-background-picker',
     theme: 'nano', // or 'monolith', or 'nano'
-    default: "#ffffff55",
+    default: "#ffffff00",
 
     swatches: [
       'rgba(244, 67, 54, 1)',
@@ -278,18 +262,68 @@ $(document).ready(function () {
     $("#zoom-buttons").children().removeClass("btn-active");
   }
 
-  function addOverlay(x, y, h, w, toolTipText, elementStyle) {
+  function addOverlay(x, y, h, w, toolTipText, bwidth, elementStyle) {
     var ele = document.createElement("div");
     ele.id = "overlay-" + overlay_index;
     overlay_index++;
     $(ele).css(elementStyle);
-    console.log(ele);
     viewer.addOverlay({
       element: ele,
       location: new OpenSeadragon.Rect(x, y, h, w)
     });
+    overlays.push(ele);
 
-    if (toolTipText.length != 0) {
+    // Add Annotation edit menu
+    var editButton = document.createElement("button");
+    var penIcon = document.createElement("i");
+    $(penIcon).addClass("fas");
+    $(penIcon).addClass("fa-pen");
+    $(editButton).append(penIcon);
+
+    var deleteButton = document.createElement("button");
+    var xIcon = document.createElement("i");
+    $(xIcon).addClass("fas");
+    $(xIcon).addClass("fa-times");
+    $(deleteButton).append(xIcon);
+
+    var buttonRadius = Math.min($(window).width() * 0.05, 25);
+    var position_top = -buttonRadius - bwidth;
+    var buttonStyle = {
+      "width": buttonRadius + "px",
+      "height": buttonRadius + "px",
+      "background-color": "white",
+      "border-radius": "100%",
+      "position": "relative",
+      "top": position_top + "px",
+      "border": "none",
+    };
+
+    $(editButton).css(buttonStyle);
+    $(editButton).css({
+      "background-color": "#ffdd57"
+    });
+
+    $(deleteButton).css(buttonStyle);
+    $(deleteButton).css({
+      "background-color": "#fa4a5f"
+    });
+
+    $(ele).append(editButton);
+    $(ele).append(deleteButton);
+
+    $(editButton).hide();
+    $(deleteButton).hide();
+
+
+    $(deleteButton).click(function () {
+      console.log(ele);
+      event.stopPropagation();
+    });
+
+    var showTooltip = toolTipText.length != 0;
+
+    // Add Tooltip with text
+    if (showTooltip) {
       var tooltip = document.createElement("div");
       $(tooltip).append(toolTipText);
       $(tooltip).css({
@@ -299,13 +333,13 @@ $(document).ready(function () {
         "display": "none",
         "background-color": "#fff"
       });
-
-
       $("#page").append(tooltip);
-
       tooltip = $(tooltip);
+    }
 
-      $(ele).hover(function (e) {
+    $(ele).hover(function (e) {
+      if (showTooltip) {
+
         var mouseX = e.pageX + 20,
           mouseY = e.pageY + 20,
           tipWidth = tooltip.width(),
@@ -331,10 +365,16 @@ $(document).ready(function () {
         tooltip.show().css({
           opacity: 0.8
         });
-      }, function () {
-        tooltip.hide();
-      });
-    }
+      }
+
+      $(editButton).show();
+      $(deleteButton).show();
+    }, function () {
+      if (showTooltip) tooltip.hide();
+      $(editButton).hide();
+      $(deleteButton).hide();
+    });
+
   }
 
   function closeAnnotation() {
@@ -384,7 +424,13 @@ $(document).ready(function () {
   });
 
   $("#screenshot-btn").click(function () {
-    screenshot.takeScreenshot();
+    var navigator = $(".displayregioncontainer").get(0);
+    console.log(navigator);
+    $(navigator).css("visibility", "invisible");
+    html2canvas($("#openseadragon-viewer").get(0)).then(function (canvas) {
+      Canvas2Image.saveAsPNG(canvas);
+    });
+    $(navigator).css("visibility", "visible");
   });
 
 
@@ -401,16 +447,19 @@ $(document).ready(function () {
     rotator.setValue(0);
     updateRotation(0);
   });
+
   $("#btn-rotate-preset-2").click(function () {
     rotator.setValue(90);
     updateRotation(90);
   });
+
   $("#btn-rotate-preset-3").click(function () {
     rotator.setValue(180);
     updateRotation(180);
   });
 
   // Modal Control Events (Modal for annotation input)
+
   $(".annotation-modal-close ").click(function () {
     $("#annotation-modal").removeClass("is-active");
     closeAnnotation();
@@ -423,8 +472,7 @@ $(document).ready(function () {
     var width = $("#border-width-input").val();
     var background_color = annotation_color_picker.getColor().toHEXA().toString();
     var border_color = annotation_border_picker.getColor().toHEXA().toString();
-    console.log(current_overlay);
-    addOverlay(current_overlay.x, current_overlay.y, current_overlay.width, current_overlay.height, text, {
+    addOverlay(current_overlay.x, current_overlay.y, current_overlay.width, current_overlay.height, text, width, {
       "border": width + "px solid " + border_color,
       "background-color": background_color
     });

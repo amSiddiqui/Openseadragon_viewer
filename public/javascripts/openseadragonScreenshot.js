@@ -257,14 +257,14 @@
 	function onKeyPress(e) {
 		var key = e.keyCode ? e.keyCode : e.charCode;
 		if (key === 13) {
-			this.confirm();
-		} else if (String.fromCharCode(key) === this.keyboardShortcut) {
-			this.toggleScreenshotMenu();
+			confirm();
+		} else if (String.fromCharCode(key) === keyboardShortcut) {
+			toggleScreenshotMenu();
 		}
 	}
 
 	function onOutsideClick() {
-		this.closeMenu();
+		closeMenu();
 	}
 
 	$.extend($.Screenshot.prototype, $.ControlDock.prototype, /** @lends OpenSeadragon.ControlDock.prototype */ {
@@ -338,7 +338,7 @@
 					viewer.element.style.width = originalCSx + "px";
 				});
 				return;
-			}
+			};
 
 			if (!this.showOptions) {
 				if (viewer.world.getItemAt(0).getFullyLoaded()) {
