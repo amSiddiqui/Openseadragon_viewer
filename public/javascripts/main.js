@@ -1,5 +1,6 @@
 $(document).ready(function () {
 
+  // Tooltip Variable Settings
   OpenSeadragon.setString('Tooltips.SelectionToggle', 'Selection Demo');
   OpenSeadragon.setString('Tooltips.SelectionConfirm', 'Ok');
   OpenSeadragon.setString('Tooltips.SelectionCancel', 'Cancel');
@@ -12,9 +13,7 @@ $(document).ready(function () {
   OpenSeadragon.setString('Tool.rotate', 'Rotate');
   OpenSeadragon.setString('Tool.close', 'Close');
 
-
-
-
+  // Image Initialization
   var image = {
     Image: {
       xmlns: "http://schemas.microsoft.com/deepzoom/2008",
@@ -29,18 +28,23 @@ $(document).ready(function () {
     }
   };
 
+  // Variable declarations
   var viewer_is_new;
   var bm_center;
   var bm_zoom;
   var bm_goto;
   var selection;
-  var selection_enabled = false;
-  var overlay_index = 0;
-  var screenshot;
-  var current_overlay;
-  var rotation_enabled = false;
-  var rotator;
+  var selection_enabled = false; // Stores wheather the user is in the annotation selection mode
+  var overlay_index = 0; // Stores the current overlay index
+  var screenshot; // Stores the Screenshot plugin
+  var current_overlay; // Stores the Rect of the current overlay that is drawn
+  var rotation_enabled = false; // Stores whether the rotation slider is visible
+  var rotator; // Stores the Rotation slider data
+  var annotation_border_picker; // Stores the Overlay Border color data
+  var annotation_color_picker; // Stores the Overlay Background color data
 
+
+  // Initialization of Openseadragon viewer
   var viewer = OpenSeadragon({
     id: "openseadragon-viewer",
     prefixUrl: "/images/",
@@ -55,11 +59,14 @@ $(document).ready(function () {
     zoomPerScroll: 2,
     crossOriginPolicy: "Anonymous",
 
-
     zoomInButton: "zoomin-btn",
     zoomOutButton: "zoomout-btn",
     homeButton: "home-btn",
   });
+
+  viewer.open(image);
+
+  // Viewer Event handlers
 
   viewer.addHandler("open", function () {
     viewer.source.minLevel = 8;
@@ -100,8 +107,9 @@ $(document).ready(function () {
   });
 
 
-  viewer.open(image);
+  // Openseadragon Plugin initialization
 
+  // Scalebar plugin
   viewer.scalebar({
     type: OpenSeadragon.ScalebarType.MICROSCOPY,
     pixelsPerMeter: 1000000,
@@ -117,7 +125,7 @@ $(document).ready(function () {
     barThickness: 2
   });
 
-
+  // Selection plugin
   selection = viewer.selection({
     prefixUrl: '/images/',
     showSelectionControl: false,
@@ -128,6 +136,7 @@ $(document).ready(function () {
     allowRotation: false,
   });
 
+  // Screenshot plugin
   screenshot = viewer.screenshot({
     showOptions: true, // Default is false
     keyboardShortcut: 'p', // Default is null
@@ -135,129 +144,45 @@ $(document).ready(function () {
   });
 
 
-  $('#draw-btn').click(function (evt) {
-    if (selection_enabled) {
-      selection.disable();
-      $(this).removeClass('btn-active');
-      $("canvas").removeClass('cursor-crosshair');
-    } else {
-      selection.enable();
-      $(this).addClass('btn-active');
-      $("canvas").addClass('cursor-crosshair');
-    }
-    selection_enabled = !selection_enabled;
+  // Other tool Initialization
 
+  // Rotation slider
+  $("#rotation-selector").roundSlider({
+    radius: 60,
+    sliderType: "min-range",
+    value: 50,
+    svgMode: true,
+    tooltipFormat: tooltipInDegrees,
+    change: updateRotationSlider,
+    drag: updateRotationSlider,
+    min: 0,
+    max: 360
   });
 
-  $("#zoomin-btn").click(function () {
-    resetZoomButtons();
-  });
-
-  $("#zoomout-btn").click(function () {
-    resetZoomButtons();
-  });
-
-  $(".btn-round-red").click(function (e) {
-    resetZoomButtons();
-    $(this).addClass("btn-active");
-    zoomVal = parseInt($(this).val());
-    viewer.viewport.zoomTo(zoomVal);
-  });
-
-  function updateRotation(deg) {
-    viewer.viewport.setRotation(deg);
+  // Event Handlers for Rotation Slider
+  function tooltipInDegrees(args) {
+    return args.value + "\u00B0";
   }
 
-  function resetZoomButtons() {
-    $("#zoom-buttons").children().removeClass("btn-active");
+  function updateRotationSlider(e) {
+    updateRotation(e.value);
   }
 
-  function addOverlay(x, y, h, w, toolTipText, elementStyle) {
-    var ele = document.createElement("div");
-    ele.id = "overlay-" + overlay_index;
-    overlay_index++;
-    $(ele).css(elementStyle);
-    console.log(ele);
-    viewer.addOverlay({
-      element: ele,
-      location: new OpenSeadragon.Rect(x, y, h, w)
+  rotator = $("#rotation-selector").data("roundSlider");
+
+
+  // Fix tooltip not in center
+  setTimeout(function () {
+    $(".rs-tooltip").css({
+      "margin-top": "-15.5px",
+      "margin-left": "-16.652px"
     });
-
-    if (toolTipText.length != 0)
-    {
-      var tooltip = document.createElement("div");
-      $(tooltip).append(toolTipText);
-      $(tooltip).css({
-        "width": "250px",
-        "height": "100px",
-        "padding": "10px 20px",
-        "display": "none",
-        "background-color": "#fff"
-      });
-  
-  
-      $("#page").append(tooltip);
-  
-      tooltip = $(tooltip);
-  
-      $(ele).hover(function (e) {
-        var mouseX = e.pageX + 20,
-          mouseY = e.pageY + 20,
-          tipWidth = tooltip.width(),
-          tipHeight = tooltip.height(),
-  
-          tipVisX = $(window).width() - (mouseX + tipWidth),
-  
-          tipVisY = $(window).height() - (mouseY + tipHeight);
-  
-        if (tipVisX < 20) {
-          mouseX = e.pageX - tipWidth + 20;
-        }
-        if (tipVisY < 20) {
-          mouseY = e.pageY - tipHeight - 20;
-        }
-  
-        tooltip.css({
-          top: mouseY,
-          left: mouseX,
-          position: 'absolute'
-        });
-  
-        tooltip.show().css({
-          opacity: 0.8
-        });
-      }, function () {
-        tooltip.hide();
-      });
-    }
-  }
-
-  function closeAnnotation()
-  {
-    selection_enabled = false;
-    selection.disable();
-    $("#draw-btn").removeClass('btn-active');
-    $("canvas").removeClass('cursor-crosshair');
-  }
-  
-  function onSelection(rect) {
-    $("#annotation-modal").addClass("is-active");
-    closeAnnotation();
-    current_overlay = rect;
-  }
+  }, 500);
 
 
-  $(".annotation-modal-close ").click(function () {
-    $("#annotation-modal").removeClass("is-active");
-    closeAnnotation();
-  });
-
-  $("#screenshot-btn").click(function () {
-    screenshot.takeScreenshot();
-  });
-
-
-  var annotation_border_picker = Pickr.create({
+  // Color picker initialization
+  // Overlay Border
+  annotation_border_picker = Pickr.create({
     el: '#annotation-border-picker',
     theme: 'nano', // or 'monolith', or 'nano'
     default: "blue",
@@ -300,8 +225,8 @@ $(document).ready(function () {
     }
   });
 
-
-  var annotation_color_picker = Pickr.create({
+  // Overlay Background
+  annotation_color_picker = Pickr.create({
     el: '#annotation-background-picker',
     theme: 'nano', // or 'monolith', or 'nano'
     default: "#ffffff55",
@@ -344,41 +269,154 @@ $(document).ready(function () {
     }
   });
 
-  $("#rotation-selector").roundSlider({
-    radius: 60,
-    sliderType: "min-range",
-    value: 50,
-    svgMode: true,
-    tooltipFormat: tooltipInDegrees,
-    change: updateRotationSlider,
-    drag: updateRotationSlider,
-    min: 0,
-    max: 360
-  });
-
-  rotator = $("#rotation-selector").data("roundSlider");
-
-  function tooltipInDegrees(args) {
-    return args.value + "\u00B0"; 
+  // Helper Functions
+  function updateRotation(deg) {
+    viewer.viewport.setRotation(deg);
   }
 
-  function updateRotationSlider(e)
-  {
-    updateRotation(e.value);
+  function resetZoomButtons() {
+    $("#zoom-buttons").children().removeClass("btn-active");
   }
-  
 
-  $("#rotation-btn").click(function(event) {
-      if (rotation_enabled){
-        $("#rotation-menu").removeClass("is-active");
-      }else{
-        $("#rotation-menu").addClass("is-active");
-      }
-      rotation_enabled = !rotation_enabled;
+  function addOverlay(x, y, h, w, toolTipText, elementStyle) {
+    var ele = document.createElement("div");
+    ele.id = "overlay-" + overlay_index;
+    overlay_index++;
+    $(ele).css(elementStyle);
+    console.log(ele);
+    viewer.addOverlay({
+      element: ele,
+      location: new OpenSeadragon.Rect(x, y, h, w)
+    });
+
+    if (toolTipText.length != 0) {
+      var tooltip = document.createElement("div");
+      $(tooltip).append(toolTipText);
+      $(tooltip).css({
+        "width": "250px",
+        "height": "100px",
+        "padding": "10px 20px",
+        "display": "none",
+        "background-color": "#fff"
+      });
+
+
+      $("#page").append(tooltip);
+
+      tooltip = $(tooltip);
+
+      $(ele).hover(function (e) {
+        var mouseX = e.pageX + 20,
+          mouseY = e.pageY + 20,
+          tipWidth = tooltip.width(),
+          tipHeight = tooltip.height(),
+
+          tipVisX = $(window).width() - (mouseX + tipWidth),
+
+          tipVisY = $(window).height() - (mouseY + tipHeight);
+
+        if (tipVisX < 20) {
+          mouseX = e.pageX - tipWidth + 20;
+        }
+        if (tipVisY < 20) {
+          mouseY = e.pageY - tipHeight - 20;
+        }
+
+        tooltip.css({
+          top: mouseY,
+          left: mouseX,
+          position: 'absolute'
+        });
+
+        tooltip.show().css({
+          opacity: 0.8
+        });
+      }, function () {
+        tooltip.hide();
+      });
+    }
+  }
+
+  function closeAnnotation() {
+    selection_enabled = false;
+    selection.disable();
+    $("#draw-btn").removeClass('btn-active');
+    $("canvas").removeClass('cursor-crosshair');
+  }
+
+  function onSelection(rect) {
+    $("#annotation-modal").addClass("is-active");
+    closeAnnotation();
+    current_overlay = rect;
+  }
+
+  // Event Handlers
+
+  // Toolbar Buttons
+  $('#draw-btn').click(function (evt) {
+    if (selection_enabled) {
+      selection.disable();
+      $(this).removeClass('btn-active');
+      $("canvas").removeClass('cursor-crosshair');
+    } else {
+      selection.enable();
+      $(this).addClass('btn-active');
+      $("canvas").addClass('cursor-crosshair');
+    }
+    selection_enabled = !selection_enabled;
+
   });
-  
 
-  $("#annotation-save-btn").click(function(){
+  $("#zoomin-btn").click(function () {
+    resetZoomButtons();
+  });
+
+  $("#zoomout-btn").click(function () {
+    resetZoomButtons();
+  });
+
+  // Zoom Preset Buttons
+  $(".btn-round-red").click(function (e) {
+    resetZoomButtons();
+    $(this).addClass("btn-active");
+    zoomVal = parseInt($(this).val());
+    viewer.viewport.zoomTo(zoomVal);
+  });
+
+  $("#screenshot-btn").click(function () {
+    screenshot.takeScreenshot();
+  });
+
+
+  $("#rotation-btn").click(function (event) {
+    if (rotation_enabled) {
+      $("#rotation-menu").removeClass("is-active");
+    } else {
+      $("#rotation-menu").addClass("is-active");
+    }
+    rotation_enabled = !rotation_enabled;
+  });
+
+  $("#btn-rotate-preset-1").click(function () {
+    rotator.setValue(0);
+    updateRotation(0);
+  });
+  $("#btn-rotate-preset-2").click(function () {
+    rotator.setValue(90);
+    updateRotation(90);
+  });
+  $("#btn-rotate-preset-3").click(function () {
+    rotator.setValue(180);
+    updateRotation(180);
+  });
+
+  // Modal Control Events (Modal for annotation input)
+  $(".annotation-modal-close ").click(function () {
+    $("#annotation-modal").removeClass("is-active");
+    closeAnnotation();
+  });
+
+  $("#annotation-save-btn").click(function () {
     $("#annotation-modal").removeClass("is-active");
 
     var text = $("#annotation-text").val();
@@ -386,17 +424,19 @@ $(document).ready(function () {
     var background_color = annotation_color_picker.getColor().toHEXA().toString();
     var border_color = annotation_border_picker.getColor().toHEXA().toString();
     console.log(current_overlay);
-    addOverlay(current_overlay.x, current_overlay.y, current_overlay.width, current_overlay.height, text, {"border": width+"px solid "+border_color, "background-color": background_color});
-
-
+    addOverlay(current_overlay.x, current_overlay.y, current_overlay.width, current_overlay.height, text, {
+      "border": width + "px solid " + border_color,
+      "background-color": background_color
+    });
   });
 
-  $("#border-width-input").on('change', function(event) {
+  $("#border-width-input").on('change', function (event) {
     var height = event.target.value;
     $("#border-example").css("height", height);
   });
 
-  // Document keys
+
+  // Document key events
   $(document).keydown(function (e) {
     switch (e.keyCode) {
       case 27:
@@ -406,38 +446,12 @@ $(document).ready(function () {
     }
   });
 
-
-  // Fix tooltip edit not in center
-  $("span .rs-tooltip .rs-tooltip-text edit").css({
-    "margin-top": -15.5,
-    "margin-left": -16.65
-  });
-
-  $(document).click(function(event) {
+  // Document Click Events
+  $(document).click(function (event) {
     var id = event.target.id;
-    if ($(event.target).closest("#rotation-btn").length == 0 && $(event.target).closest("#rotation-menu").length == 0)
-    {
+    if ($(event.target).closest("#rotation-btn").length == 0 && $(event.target).closest("#rotation-menu").length == 0) {
       $("#rotation-menu").removeClass("is-active");
       rotation_enabled = false;
     }
   });
-
-  $("#btn-rotate-preset-1").click(function(){
-    rotator.setValue(0);
-    updateRotation(0);
-  });
-  $("#btn-rotate-preset-2").click(function(){
-    rotator.setValue(90);
-    updateRotation(90);
-  });
-  $("#btn-rotate-preset-3").click(function(){
-    rotator.setValue(180);
-    updateRotation(180);
-  });
 });
-
-// Fix tooltip not in center
-setTimeout(function() {
-  $(".rs-tooltip").css({"margin-top": "-15.5px", "margin-left": "-16.652px"});
-}, 500
-);
