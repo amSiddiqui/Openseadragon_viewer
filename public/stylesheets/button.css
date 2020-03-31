@@ -85,6 +85,29 @@
 	top: 1px;
 }
 
+.btn-round-purple {
+    background: #9f62bd;
+	color: #fff;
+	box-shadow: 0 2px #8352a0;
+	-webkit-transition: none;
+	-moz-transition: none;
+	transition: none;
+	border-radius: 30%;
+	width: 40px;
+	height: 30px;
+	padding: 0;
+}
+
+.btn-round-purple:hover {
+	box-shadow: 0 2px #8352a0;
+	top: 0px;
+}
+
+.btn-round-purple:active {
+	box-shadow: 0 0 #8352a0;
+	top: 1px;
+}
+
 
 .btn-round-red {
 	border: none;
@@ -126,6 +149,48 @@
 	background: #24b662;
 	top: 1px;
 }
+
+
+.btn-small-blue {
+	border: none;
+	font-family: sans-serif;
+	font-size: 0.8rem;
+	color: inherit;
+	background: none;
+	cursor: pointer;
+	padding: 10px 20px;
+	display: inline-block;
+	margin: 0px 10px;
+	letter-spacing: 1px;
+	outline: none;
+	position: relative;
+	-webkit-transition: all 0.3s;
+	-moz-transition: all 0.3s;
+	transition: all 0.3s;
+
+
+    background: #0d7377;
+	color: #fff;
+	box-shadow: 0 4px #364f6b;
+	-webkit-transition: none;
+	-moz-transition: none;
+	transition: none;
+	border-radius: 50%;
+	width: 30px;
+	height: 30px;
+	padding: 0;
+}
+
+.btn-samll-blue:hover {
+	box-shadow: 0 4px #364f6b;
+	top: 0px;
+}
+
+.btn-small-blue:active {
+	box-shadow: 0 2px #364f6b;
+	top: 1px;
+}
+
 
 .cursor-crosshair {
 	cursor: crosshair;

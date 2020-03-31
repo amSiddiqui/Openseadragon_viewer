@@ -41,8 +41,11 @@ html, body {
     margin: 0px 10px;
 }
 
+#rotation-menu > .dropdown-menu{
+    margin-left: -40px;
+}
 
-.dropdown-item {
+#rotation-menu > .dropdown-menu > .dropdown-content > .dropdown-item {
     margin-left: 15px;
 }
 

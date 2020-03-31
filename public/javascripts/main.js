@@ -353,10 +353,8 @@ $(document).ready(function () {
     change: updateRotationSlider,
     drag: updateRotationSlider,
     min: 0,
-    max: 180
+    max: 360
   });
-
-  
 
   rotator = $("#rotation-selector").data("roundSlider");
 
@@ -423,4 +421,23 @@ $(document).ready(function () {
       rotation_enabled = false;
     }
   });
+
+  $("#btn-rotate-preset-1").click(function(){
+    rotator.setValue(0);
+    updateRotation(0);
+  });
+  $("#btn-rotate-preset-2").click(function(){
+    rotator.setValue(90);
+    updateRotation(90);
+  });
+  $("#btn-rotate-preset-3").click(function(){
+    rotator.setValue(180);
+    updateRotation(180);
+  });
 });
+
+// Fix tooltip not in center
+setTimeout(function() {
+  $(".rs-tooltip").css({"margin-top": "-15.5px", "margin-left": "-16.652px"});
+}, 500
+);
