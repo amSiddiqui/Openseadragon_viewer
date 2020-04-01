@@ -6,20 +6,36 @@
     <title>Hover Div</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"
-        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-
-    <link rel="stylesheet" href="/stylesheets/support.css">
-    <script src="/javascripts/html2canvas.min.js"></script>
-    <script src="/javascripts/canvas2image.js"></script>
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="/javascripts/fontawesome.min.js"></script>
     <script src="/javascripts/support.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+    <link rel="stylesheet" href="/stylesheets/support.css">
 </head>
 
 <body>
-    <div id="parent">
-        <div id="child"></div>
-    </div>
-    <button id="save">Save</button>
+
+    
+    <div class="card">
+        <a class="delete card-close"></a>
+        <div class="card-content">
+          <p>Lorem ipsum, dolor sit amet consectetur adipisicing elit. Tempore eum aperiam assumenda, aut sint dolorum ex, vero molestiae, fugit ad autem. Dolores voluptatem a dolor, consequatur voluptates molestiae alias autem eius ipsa rerum! Optio necessitatibus placeat quibusdam, facilis voluptatem, ducimus, quam ad quae harum obcaecati reiciendis perspiciatis omnis! Neque, aperiam!</p>
+        </div>
+        <footer class="card-footer">
+          <p class="card-footer-item">
+            <span>
+                <button class="button is-info is-small">Edit</button>
+            </span>
+          </p>
+          <p class="card-footer-item">
+            <span>
+              <button class="button is-danger is-small">Delete</button>
+            </span>
+          </p>
+        </footer>
+      </div>
+      
 </body> 
 </html>

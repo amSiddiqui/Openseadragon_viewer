@@ -3,6 +3,7 @@ html, body {
     padding: 0px;
     margin: 0px;
     overflow-x: hidden;
+    overflow-y: hidden;
 }
 
 #page {
@@ -15,6 +16,9 @@ html, body {
     height: 95%;
 }
 
+#delete-confirm > .modal-content {
+    width: 300px;
+}
 
 #toolbar {
     width: 100%;
@@ -103,6 +107,15 @@ html, body {
     font-size: 25px;
 }
 
+.card-close {
+    float: right;
+    margin-top: 5px;
+    margin-right: 5px;
+}
+
+.card-footer-item {
+    padding: 6px;
+}
 
 @media screen and (max-width: 1160px) {
     .separator {

@@ -41,7 +41,13 @@ $(document).ready(function () {
   var rotation_enabled = false; // Stores whether the rotation slider is visible
   var rotator; // Stores the Rotation slider data
   var annotation_border_picker; // Stores the Overlay Border color data
+  var default_border_color = "red";
   var annotation_color_picker; // Stores the Overlay Background color data
+  var default_background_color = "#ffffff00";
+  var annotation_closed = false; // Stores whether the annotation was closed or not
+  var recal_card_pos = true;
+  var editMode = false;
+  var currentEditingOverlay = null;
 
 
   // Initialization of Openseadragon viewer
@@ -106,7 +112,7 @@ $(document).ready(function () {
     resetZoomButtons();
   });
 
-  
+
 
 
   // Openseadragon Plugin initialization
@@ -178,7 +184,7 @@ $(document).ready(function () {
   annotation_border_picker = Pickr.create({
     el: '#annotation-border-picker',
     theme: 'nano', // or 'monolith', or 'nano'
-    default: "red",
+    default: default_border_color,
 
     swatches: [
       'red',
@@ -215,7 +221,7 @@ $(document).ready(function () {
   annotation_color_picker = Pickr.create({
     el: '#annotation-background-picker',
     theme: 'nano', // or 'monolith', or 'nano'
-    default: "#ffffff00",
+    default: default_background_color,
 
     swatches: [
       'rgba(244, 67, 54, 1)',
@@ -241,7 +247,7 @@ $(document).ready(function () {
       opacity: true,
       hue: true,
 
-      // Input / output Options
+      // Input / output Options 
       interaction: {
         hex: false,
         rgba: false,
@@ -255,6 +261,16 @@ $(document).ready(function () {
     }
   });
 
+  // Color picker events
+  annotation_color_picker.on('save', function (event) {
+    annotation_color_picker.hide();
+  });
+
+  annotation_border_picker.on('save', function (event) {
+    annotation_border_picker.hide();
+  });
+
+
   // Helper Functions
   function updateRotation(deg) {
     viewer.viewport.setRotation(deg);
@@ -264,86 +280,71 @@ $(document).ready(function () {
     $("#zoom-buttons").children().removeClass("btn-active");
   }
 
-  function addOverlay(x, y, h, w, toolTipText, bwidth, elementStyle) {
+  function addOverlay(x, y, h, w, toolTipText, bwidth, borderColor, backgroundColor) {
     var ele = document.createElement("div");
     ele.id = "overlay-" + overlay_index;
     overlay_index++;
-    $(ele).css(elementStyle);
+    $(ele).css({
+      "border": bwidth+"px solid "+borderColor,
+      "background-color": backgroundColor
+    });
     viewer.addOverlay({
       element: ele,
       location: new OpenSeadragon.Rect(x, y, h, w)
     });
-    overlays.push(ele);
-
-    // Add Annotation edit menu
-    var editButton = document.createElement("button");
-    var penIcon = document.createElement("i");
-    $(penIcon).addClass("fas");
-    $(penIcon).addClass("fa-pen");
-    $(editButton).append(penIcon);
-
-    var deleteButton = document.createElement("button");
-    var xIcon = document.createElement("i");
-    $(xIcon).addClass("fas");
-    $(xIcon).addClass("fa-times");
-    $(deleteButton).append(xIcon);
-
-    var buttonRadius = Math.min($(window).width() * 0.05, 25);
-    var position_top = -buttonRadius - bwidth;
-    var buttonStyle = {
-      "width": buttonRadius + "px",
-      "height": buttonRadius + "px",
-      "background-color": "white",
-      "border-radius": "100%",
-      "position": "relative",
-      "top": position_top + "px",
-      "border": "none",
-    };
-
-    $(editButton).css(buttonStyle);
-    $(editButton).css({
-      "background-color": "#ffdd57"
-    });
-
-    $(deleteButton).css(buttonStyle);
-    $(deleteButton).css({
-      "background-color": "#fa4a5f"
-    });
-
-    $(ele).append(editButton);
-    $(ele).append(deleteButton);
-
-    $(editButton).hide();
-    $(deleteButton).hide();
-
-
-    $(deleteButton).click(function () {
-      console.log(ele);
-      event.stopPropagation();
-    });
-
-    var showTooltip = toolTipText.length != 0;
+    
 
     // Add Tooltip with text
-    if (showTooltip) {
-      var tooltip = document.createElement("div");
-      $(tooltip).append(toolTipText);
-      $(tooltip).css({
-        "width": "250px",
-        "height": "100px",
-        "padding": "10px 20px",
-        "display": "none",
-        "background-color": "#fff"
-      });
-      $("#page").append(tooltip);
-      tooltip = $(tooltip);
-    }
+    var tooltip = createCard(toolTipText, ele);
+    var deleteButton = tooltip.delete;
+    
+    var editButton = tooltip.edit;
+    var confirmationModal = $("#delete-confirm").clone();
+    $(confirmationModal).children(".modal-content").children(".card").css({"width": "350px", "margin": "auto"});
+    $(confirmationModal).attr('id', '');
+    $("#page").append(confirmationModal);
+
+    $(deleteButton).click(function () {  
+      $(confirmationModal).addClass('is-active');
+    });
+
+    $(confirmationModal).children('button').click(function() {
+      $(confirmationModal).removeClass('is-active');
+    });
+
+    $(confirmationModal).children().find("#cancel-button").click(function() {
+      $(confirmationModal).removeClass('is-active');
+    });
+
+    $(confirmationModal).children().find("#delete-button").click(function() {
+      $(confirmationModal).removeClass('is-active');
+      $(confirmationModal).remove();
+      $(tooltip).remove();
+      viewer.removeOverlay(ele);
+    });
+
+    $(editButton).click(function() {
+      $("#annotation-modal-title").html("Edit Annotation");
+      $("#annotation-modal").addClass("is-active");
+      editMode = true;
+      console.log(overlays);
+      console.log(overlay_index-1);
+      $("#annotation-text").val(overlays[overlay_index-1].text);
+      annotation_border_picker.setColor(overlays[overlay_index-1].border);
+      annotation_color_picker.setColor(overlays[overlay_index-1].backgound);
+      $("#border-width-input").val(overlays[overlay_index-1].width);
+      currentEditingOverlay = {id: overlay_index-1, overlay: ele, tooltip: tooltip};
+    });
+
+    overlays.push({overlay: ele, text: toolTipText, width: bwidth, border: borderColor, backgound: backgroundColor});
+
+    $("#page").append(tooltip.card);
+    tooltip = $(tooltip.card);
 
     $(ele).hover(function (e) {
-      if (showTooltip) {
-
-        var mouseX = e.pageX + 20,
-          mouseY = e.pageY + 20,
+      if (recal_card_pos) {
+        var mouseX = e.pageX,
+          mouseY = e.pageY,
           tipWidth = tooltip.width(),
           tipHeight = tooltip.height(),
 
@@ -357,26 +358,87 @@ $(document).ready(function () {
         if (tipVisY < 20) {
           mouseY = e.pageY - tipHeight - 20;
         }
-
         tooltip.css({
           top: mouseY,
           left: mouseX,
           position: 'absolute'
         });
-
-        tooltip.show().css({
-          opacity: 0.8
-        });
       }
-
-      $(editButton).show();
-      $(deleteButton).show();
+      if (!annotation_closed) {
+        tooltip.show();
+        recal_card_pos = false;
+      }
     }, function () {
-      if (showTooltip) tooltip.hide();
-      $(editButton).hide();
-      $(deleteButton).hide();
+        if (!tooltip.is(":hover")) {
+          tooltip.hide();
+          recal_card_pos = true;
+        }
+        annotation_closed = false;
     });
 
+  }
+
+  function createCard(message, overlay) {
+    var card = document.createElement('div');
+    $(card).addClass('card');
+    var closeButton = document.createElement('a');
+    $(closeButton).addClass('delete');
+    $(closeButton).addClass('card-close');
+    $(card).append(closeButton);
+
+    var width = message.length == 0 ? "200px" : "300px";
+    $(card).css("width", width);
+    if (message.length != 0) {
+      var cardContent = document.createElement('div');
+      $(cardContent).addClass('card-content');
+      var paragraph = document.createElement('p');
+      $(paragraph).append(message);
+      $(cardContent).append(paragraph);
+      $(card).append(cardContent);
+    }
+    var footer = document.createElement('footer');
+    $(footer).addClass('card-footer');
+
+    var cardItem = document.createElement('p');
+    $(cardItem).addClass('card-footer-item');
+    var span = document.createElement('span');
+    var editButton = document.createElement('button');
+    $(editButton).append('Edit');
+    $(editButton).addClass('button');
+    $(editButton).addClass('is-info');
+    $(editButton).addClass('is-small');
+    $(span).append(editButton);
+    $(cardItem).append(span);
+    $(footer).append(cardItem);
+
+    var cardItem2 = document.createElement('p');
+    $(cardItem2).addClass('card-footer-item');
+    var span2 = document.createElement('span');
+    var deleteButton = document.createElement('button');
+    $(deleteButton).append('Delete');
+    $(deleteButton).addClass('button');
+    $(deleteButton).addClass('is-danger');
+    $(deleteButton).addClass('is-small');
+    $(span2).append(deleteButton);
+    $(cardItem2).append(span2);
+    $(footer).append(cardItem2);
+
+    $(card).append(footer);
+
+    $(closeButton).click(function () {
+      $(card).hide();
+      annotation_closed = true;
+    });
+
+
+    $(card).hover(function () {}, function () {
+      if (!$(overlay).is(":hover")) {
+        $(card).hide();
+        recal_card_pos = true;
+      }
+    });
+
+    return {card: card, delete: deleteButton, edit: editButton};
   }
 
   function closeAnnotation() {
@@ -390,6 +452,36 @@ $(document).ready(function () {
     $("#annotation-modal").addClass("is-active");
     closeAnnotation();
     current_overlay = rect;
+  }
+
+  function resetAnnotationModal() {
+    $("#annotation-text").val('');
+    $("#border-width-input").val(4);
+    annotation_border_picker.setColor(default_border_color);
+    annotation_color_picker.setColor(default_background_color);
+    $("#annotation-modal-title").html("Add Annotation");
+  }
+
+  function updateAnnotation(text, width, background_color, border_color) {
+    $(currentEditingOverlay.overlay).css({
+      "background-color": background_color,
+      "border": width+"px solid "+border_color
+    });
+    if (text.length == 0 && overlays[currentEditingOverlay.id].text.length != 0) {
+      currentEditingOverlay.tooltip.find(".card-content").remove();
+    }
+    else if (text.length != 0 && overlays[currentEditingOverlay.id].text.length == 0) {
+      var cardContent = document.createElement('div');
+      $(cardContent).addClass('card-content');
+      var paragraph = document.createElement('p');
+      $(paragraph).append(text);
+      $(cardContent).append(paragraph);
+      $(currentEditingOverlay.tooltip).append(cardContent);
+    }
+    else if (text.length != 0 && overlays[currentEditingOverlay.id].text.length != 0) {
+      $(currentEditingOverlay.tooltip).find(".card-content").children('p').html(text);
+    }
+
   }
 
   // Event Handlers
@@ -466,20 +558,24 @@ $(document).ready(function () {
 
   $(".annotation-modal-close ").click(function () {
     $("#annotation-modal").removeClass("is-active");
+    editMode = false;
+    resetAnnotationModal();
     closeAnnotation();
   });
 
   $("#annotation-save-btn").click(function () {
     $("#annotation-modal").removeClass("is-active");
-
     var text = $("#annotation-text").val();
     var width = $("#border-width-input").val();
     var background_color = annotation_color_picker.getColor().toHEXA().toString();
     var border_color = annotation_border_picker.getColor().toHEXA().toString();
-    addOverlay(current_overlay.x, current_overlay.y, current_overlay.width, current_overlay.height, text, width, {
-      "border": width + "px solid " + border_color,
-      "background-color": background_color
-    });
+    if (editMode) {
+      updateAnnotation(text, width, background_color, border_color);
+    }else{
+      addOverlay(current_overlay.x, current_overlay.y, current_overlay.width, current_overlay.height, text, width, border_color, background_color);
+    }
+    editMode = false;
+    resetAnnotationModal();
   });
 
   $("#border-width-input").on('change', function (event) {

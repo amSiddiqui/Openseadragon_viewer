@@ -1,14 +1,28 @@
-#parent {
-    width: 1050px;
-    height: 450px;
-    background-color: #fb7b6b;
+.btn {
+    width: 25px;
+    height: 25px;
+    border-radius: 100%;
+    border: none;
 }
 
-#child {
-    width: 200px;
-    height: 100px;
-    background-color: #d7385e;
-    position: relative;
-    top: 50px;
-    left: 20px;
+.card-close {
+    float: right;
+    margin-top: 5px;
+    margin-right: 5px;
+}
+
+#edit-btn {
+    background-color: #ffdd57;
+}
+
+#delete-btn {
+    background-color: #fa4a5f;
+}
+
+.card {
+    width: 300px;
+}
+
+.card-footer-item {
+    padding: 6px;
 }

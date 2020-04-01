@@ -10,9 +10,9 @@
     <link rel="stylesheet" href="/stylesheets/main.css">
     <link rel="stylesheet" href="/stylesheets/button.css">
     <link rel="stylesheet" href="/stylesheets/roundslider.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"/> 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" />
 
-    
+
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"
         integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
 
@@ -31,7 +31,7 @@
     <script src="/javascripts/canvas2image.js"></script>
 
     <script src="/javascripts/main.js"></script>
-    
+
 </head>
 
 <body>
@@ -47,7 +47,7 @@
                         class="fas fa-search-minus"></i></button>
 
                 <div class="separator "></div>
-                
+
 
                 <div id="zoom-buttons">
                     <button title="Zoom In 2x" value="2" style="border: 2px solid orange;"
@@ -70,7 +70,7 @@
                         <button title="Rotate" id="rotation-btn" class=" btn btn-round-blue"><i
                                 class="fas fa-sync"></i></button>
                     </div>
-                    <div class="dropdown-menu"role="menu">
+                    <div class="dropdown-menu" role="menu">
                         <div class="dropdown-content">
                             <div class="dropdown-item">
                                 <div id="rotation-selector"></div>
@@ -78,10 +78,12 @@
                         </div>
                     </div>
                 </div>
-                
-                <button id="btn-rotate-preset-1" style="width: 28px; height: 28px;" class="btn btn-small-blue">0&#176;</button>
+
+                <button id="btn-rotate-preset-1" style="width: 28px; height: 28px;"
+                    class="btn btn-small-blue">0&#176;</button>
                 <button id="btn-rotate-preset-2" class="btn btn-small-blue">90&#176;</button>
-                <button id="btn-rotate-preset-3" style="width: 32px; height: 32px;" class="btn btn-small-blue">180&#176;</button>
+                <button id="btn-rotate-preset-3" style="width: 32px; height: 32px;"
+                    class="btn btn-small-blue">180&#176;</button>
 
                 </button>
 
@@ -93,27 +95,27 @@
 
                 <button title="Screenshot" id="screenshot-btn" class=" btn btn-round-purple"><i
                         class="fas fa-camera"></i></button>
-                
-                
-                <button id="hamburger" ><i class="fas fa-bars"></i></button>
+
+
+                <button id="hamburger"><i class="fas fa-bars"></i></button>
             </nav>
         </div>
 
         <div id="openseadragon-viewer">
         </div>
 
-
-        <div class="modal " id="annotation-modal">
+        <div class="modal" id="annotation-modal">
             <div class="modal-background"></div>
             <div class="modal-card">
                 <header class="modal-card-head">
-                    <p class="modal-card-title">Annotation Setting</p>
+                    <p class="modal-card-title" id="annotation-modal-title">Annotation Setting</p>
                     <button class="delete annotation-modal-close" arai-label="close"></button>
                 </header>
                 <section class="modal-card-body">
                     <div class="container">
                         <label for="annotation-text" class="label">Annotation Text</label>
-                        <textarea name="annotation-text" id="annotation-text" cols="15" rows="5" class="textarea"></textarea>
+                        <textarea name="annotation-text" id="annotation-text" cols="15" rows="5"
+                            class="textarea"></textarea>
                         <div class="columns has-text-centered">
                             <div class="column is-3">
                                 <label class="label">Border Color</label>
@@ -123,7 +125,8 @@
                                 <label class="label">Border Width</label>
                                 <div class="columns">
                                     <div class="column is-6">
-                                        <input type="number" name="border-width" id="border-width-input" class="input is-rounded" min = "2" max = "15" value="4">
+                                        <input type="number" name="border-width" id="border-width-input"
+                                            class="input is-rounded" min="2" max="15" value="4">
                                     </div>
                                     <div class="column">
                                         <div id="border-example"></div>
@@ -138,22 +141,45 @@
                     </div>
                 </section>
                 <footer class="modal-card-foot">
-                    <button class="button is-success" id="annotation-save-btn">Add Annotation</button>
+                    <button class="button is-success" id="annotation-save-btn">Save</button>
                     <button class="button annotation-modal-close">Cancel</button>
                 </footer>
             </div>
         </div>
 
+
+
         <div id="loading-modal" class="modal">
             <div class="modal-background"></div>
             <div class="modal-content">
-              <p class="image">
-                <img style="width: 67px; height: 67px;" src="/images/loading.gif" alt="Loading...">
-              </p>
+                <p class="image">
+                    <img style="width: 67px; height: 67px;" src="/images/loading.gif" alt="Loading...">
+                </p>
             </div>
             <button class="modal-close is-large" aria-label="close"></button>
-          </div>
+        </div>
 
+        <div class="modal" id="delete-confirm">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="card">
+                    <div class="card-content">
+                        <p class="is-size-5">
+                            Delete Annotation?
+                        </p>
+                    </div>
+                    <footer class="card-footer">
+                        <p class="card-footer-item">
+                            <button id="delete-button" class="button is-danger">Delete</button>
+                        </p>
+                        <p class="card-footer-item">
+                            <button id="cancel-button" class="button">Cancel</button>
+                        </p>
+                    </footer>
+                </div>
+            </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>
 
     </div>
 </body>
