@@ -195,3 +195,31 @@
 .cursor-crosshair {
 	cursor: crosshair;
 }
+
+@media (min-width: 830px) {
+	.btn-small-blue {
+		width: 25px;
+		height: 25px;
+	}
+
+	.btn-round-red {
+		width: 28px;
+		height: 28px;
+		font-size: 0.7rem;
+	}
+
+	.btn-round-purple {
+		width: 35px;
+		height: 25px;
+	}
+
+	.btn-round-blue {
+		width: 35px;
+		height: 25px;
+	}
+
+	.btn-round-green {
+		width: 35px;
+		height: 25px;
+	}
+}
