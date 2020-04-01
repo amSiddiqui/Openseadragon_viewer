@@ -106,6 +106,8 @@ $(document).ready(function () {
     resetZoomButtons();
   });
 
+  
+
 
   // Openseadragon Plugin initialization
 
@@ -424,13 +426,15 @@ $(document).ready(function () {
   });
 
   $("#screenshot-btn").click(function () {
-    var navigator = $(".displayregioncontainer").get(0);
-    console.log(navigator);
-    $(navigator).css("visibility", "invisible");
+    $("#loading-modal").addClass("is-active");
+    var parent = $('.openseadragon-container').get(0);
+    var toBeHidden = $(parent).children().get(2);
+    $(toBeHidden).hide();
     html2canvas($("#openseadragon-viewer").get(0)).then(function (canvas) {
       Canvas2Image.saveAsPNG(canvas);
+      $("#loading-modal").removeClass("is-active");
+      $(toBeHidden).show();
     });
-    $(navigator).css("visibility", "visible");
   });
 
 

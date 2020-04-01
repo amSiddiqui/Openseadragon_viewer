@@ -68,8 +68,16 @@ html, body {
     background-color: white;
 }
 
-.modal-background {
+#annotation-modal > .modal-background {
     opacity: 0.2;
+}
+
+#loading-modal > .modal-content > .image {
+    padding: 10px;
+}
+
+#loading-modal > .modal-content > .image > img {
+    margin: auto;
 }
 
 #border-example {
