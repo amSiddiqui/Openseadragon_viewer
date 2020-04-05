@@ -22,6 +22,10 @@ router.get('/support', function (req, res, next) {
   res.render('support');
 });
 
+router.get('/paper', function (req, res, next) {
+  res.render('paper');
+});
+
 
 
 module.exports = router;

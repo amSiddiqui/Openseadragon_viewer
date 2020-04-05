@@ -48,6 +48,7 @@ $(document).ready(function () {
   var recal_card_pos = true;
   var editMode = false;
   var currentEditingOverlay = null;
+  var paperOverlay;
 
 
   // Initialization of Openseadragon viewer
@@ -60,7 +61,7 @@ $(document).ready(function () {
     constrainDuringPan: false,
     maxZoomPixelRatio: 2,
     minPixelRatio: 0.5,
-    minZoomLevel: 1,
+    minZoomLevel: 0.65,
     visibilityRatio: 1,
     zoomPerScroll: 2,
     crossOriginPolicy: "Anonymous",
@@ -113,7 +114,46 @@ $(document).ready(function () {
   });
 
 
+  viewer.addHandler("zoom", function (event) {
+    var z = event.zoom;
+    var scaling = 20.0 / z;
+    scaling = Math.max(2, scaling);
+    scaling = Math.min(20, scaling);
 
+    var offset = 150.0 / z;
+    offset = Math.min(150.0, offset);
+    offset = Math.max(30.0, offset);
+    lines.forEach(function (line) {
+      line.text.scaling = new Point(scaling, scaling);
+      var mid = midPoint(line.line.firstSegment.point, line.line.lastSegment.point);
+      var off = new Point(offset * line.offset.x, offset * line.offset.y);
+      line.text.position = mid.add(off);
+    });
+
+    rects.forEach(function(rect) {
+      rect.lText.scaling = new Point(scaling, scaling);
+      var mid = midPoint(rect.rect.bounds.topLeft, rect.rect.bounds.topRight);
+      var off = new Point(offset * rect.lOff.x, offset * rect.lOff.y);
+      rect.lText.position = mid.add(off);
+
+
+      rect.bText.scaling = new Point(scaling, scaling);
+      mid = midPoint(rect.rect.bounds.topRight, rect.rect.bounds.bottomRight);
+      off = new Point(offset * rect.bOff.x, offset * rect.bOff.y);
+      rect.bText.position = mid.add(off);
+    });
+
+    circles.forEach(function(circle) {
+      var maxScale = Math.min(20.0, circle.circle.radius / 50.0);
+      scaling = Math.min(maxScale, scaling);
+      scaling = Math.max(1, scaling);
+      circle.scale.text.scaling = new Point(scaling, scaling);
+      var mid = midPoint(circle.scale.line.firstSegment.point, circle.scale.line.lastSegment.point);
+      var off = new Point(offset * circle.scale.offset.x, offset * circle.scale.offset.y);
+      circle.scale.text.position = mid.add(off);
+    });
+
+  });
 
   // Openseadragon Plugin initialization
 
@@ -144,6 +184,8 @@ $(document).ready(function () {
     allowRotation: false,
   });
 
+  // Paperjs overlay
+  paperOverlay = viewer.paperjsOverlay();
 
   // Other tool Initialization
 
@@ -285,58 +327,69 @@ $(document).ready(function () {
     ele.id = "overlay-" + overlay_index;
     overlay_index++;
     $(ele).css({
-      "border": bwidth+"px solid "+borderColor,
+      "border": bwidth + "px solid " + borderColor,
       "background-color": backgroundColor
     });
     viewer.addOverlay({
       element: ele,
       location: new OpenSeadragon.Rect(x, y, h, w)
     });
-    
+
 
     // Add Tooltip with text
     var tooltip = createCard(toolTipText, ele);
     var deleteButton = tooltip.delete;
-    
+
     var editButton = tooltip.edit;
     var confirmationModal = $("#delete-confirm").clone();
-    $(confirmationModal).children(".modal-content").children(".card").css({"width": "350px", "margin": "auto"});
+    $(confirmationModal).children(".modal-content").children(".card").css({
+      "width": "350px",
+      "margin": "auto"
+    });
     $(confirmationModal).attr('id', '');
     $("#page").append(confirmationModal);
 
-    $(deleteButton).click(function () {  
+    $(deleteButton).click(function () {
       $(confirmationModal).addClass('is-active');
     });
 
-    $(confirmationModal).children('button').click(function() {
+    $(confirmationModal).children('button').click(function () {
       $(confirmationModal).removeClass('is-active');
     });
 
-    $(confirmationModal).children().find("#cancel-button").click(function() {
+    $(confirmationModal).children().find("#cancel-button").click(function () {
       $(confirmationModal).removeClass('is-active');
     });
 
-    $(confirmationModal).children().find("#delete-button").click(function() {
+    $(confirmationModal).children().find("#delete-button").click(function () {
       $(confirmationModal).removeClass('is-active');
       $(confirmationModal).remove();
       $(tooltip).remove();
       viewer.removeOverlay(ele);
     });
 
-    $(editButton).click(function() {
+    $(editButton).click(function () {
       $("#annotation-modal-title").html("Edit Annotation");
       $("#annotation-modal").addClass("is-active");
       editMode = true;
-      console.log(overlays);
-      console.log(overlay_index-1);
-      $("#annotation-text").val(overlays[overlay_index-1].text);
-      annotation_border_picker.setColor(overlays[overlay_index-1].border);
-      annotation_color_picker.setColor(overlays[overlay_index-1].backgound);
-      $("#border-width-input").val(overlays[overlay_index-1].width);
-      currentEditingOverlay = {id: overlay_index-1, overlay: ele, tooltip: tooltip};
+      $("#annotation-text").val(overlays[overlay_index - 1].text);
+      annotation_border_picker.setColor(overlays[overlay_index - 1].border);
+      annotation_color_picker.setColor(overlays[overlay_index - 1].backgound);
+      $("#border-width-input").val(overlays[overlay_index - 1].width);
+      currentEditingOverlay = {
+        id: overlay_index - 1,
+        overlay: ele,
+        tooltip: tooltip
+      };
     });
 
-    overlays.push({overlay: ele, text: toolTipText, width: bwidth, border: borderColor, backgound: backgroundColor});
+    overlays.push({
+      overlay: ele,
+      text: toolTipText,
+      width: bwidth,
+      border: borderColor,
+      backgound: backgroundColor
+    });
 
     $("#page").append(tooltip.card);
     tooltip = $(tooltip.card);
@@ -369,11 +422,11 @@ $(document).ready(function () {
         recal_card_pos = false;
       }
     }, function () {
-        if (!tooltip.is(":hover")) {
-          tooltip.hide();
-          recal_card_pos = true;
-        }
-        annotation_closed = false;
+      if (!tooltip.is(":hover")) {
+        tooltip.hide();
+        recal_card_pos = true;
+      }
+      annotation_closed = false;
     });
 
   }
@@ -438,7 +491,11 @@ $(document).ready(function () {
       }
     });
 
-    return {card: card, delete: deleteButton, edit: editButton};
+    return {
+      card: card,
+      delete: deleteButton,
+      edit: editButton
+    };
   }
 
   function closeAnnotation() {
@@ -465,20 +522,18 @@ $(document).ready(function () {
   function updateAnnotation(text, width, background_color, border_color) {
     $(currentEditingOverlay.overlay).css({
       "background-color": background_color,
-      "border": width+"px solid "+border_color
+      "border": width + "px solid " + border_color
     });
     if (text.length == 0 && overlays[currentEditingOverlay.id].text.length != 0) {
       currentEditingOverlay.tooltip.find(".card-content").remove();
-    }
-    else if (text.length != 0 && overlays[currentEditingOverlay.id].text.length == 0) {
+    } else if (text.length != 0 && overlays[currentEditingOverlay.id].text.length == 0) {
       var cardContent = document.createElement('div');
       $(cardContent).addClass('card-content');
       var paragraph = document.createElement('p');
       $(paragraph).append(text);
       $(cardContent).append(paragraph);
       $(currentEditingOverlay.tooltip).append(cardContent);
-    }
-    else if (text.length != 0 && overlays[currentEditingOverlay.id].text.length != 0) {
+    } else if (text.length != 0 && overlays[currentEditingOverlay.id].text.length != 0) {
       $(currentEditingOverlay.tooltip).find(".card-content").children('p').html(text);
     }
 
@@ -571,7 +626,7 @@ $(document).ready(function () {
     var border_color = annotation_border_picker.getColor().toHEXA().toString();
     if (editMode) {
       updateAnnotation(text, width, background_color, border_color);
-    }else{
+    } else {
       addOverlay(current_overlay.x, current_overlay.y, current_overlay.width, current_overlay.height, text, width, border_color, background_color);
     }
     editMode = false;
@@ -602,4 +657,376 @@ $(document).ready(function () {
       rotation_enabled = false;
     }
   });
+
+  // Resize event
+  window.onresize = function () {
+    paperOverlay.resize();
+    paperOverlay.canvasresize();
+  };
+
+
+  // Paperjs Drawing tool
+  // Install paperjs
+  paper.install(window);
+
+  /*
+  0 - Drawing Mode off
+  1 - Pen Mode
+  2 - Rect Mode
+  3 - Circle Mode
+  */
+  var drawMode = 0;
+  var startPoint = null;
+  var currentLine = null;
+  var lines = [];
+
+  var currentRect = null;
+  var rects = [];
+
+  var currentCircle = null;
+  var circles = [];
+
+
+  $("#pen-btn").click(function () {
+    if (drawMode !== 1) {
+      drawMode = 1;
+      viewer.setMouseNavEnabled(false);
+    } else {
+      drawMode = 0;
+      viewer.setMouseNavEnabled(true);
+    }
+  });
+
+  $("#rect-btn").click(function () {
+    if (drawMode !== 2) {
+      drawMode = 2;
+      viewer.setMouseNavEnabled(false);
+    } else {
+      drawMode = 0;
+      viewer.setMouseNavEnabled(true);
+    }
+  });
+
+  $("#circle-btn").click(function () {
+    if (drawMode !== 3) {
+      drawMode = 3;
+      viewer.setMouseNavEnabled(false);
+    } else {
+      drawMode = 0;
+      viewer.setMouseNavEnabled(true);
+    }
+  });
+
+  // Openseadragon Mouse events
+  var mouseTracker = new OpenSeadragon.MouseTracker({
+    element: viewer.canvas,
+    pressHandler: pressHandler,
+    dragHandler: dragHandler,
+    dragEndHandler: dragEndHandler
+  });
+  mouseTracker.setTracking(true);
+
+
+  function pressHandler(event) {
+    var transformedPoint = view.viewToProject(new Point(event.position.x, event.position.y));
+    startPoint = transformedPoint;
+    switch (drawMode) {
+      case 1:
+        linePressHandler();
+        break;
+
+      case 2:
+        rectPressHandler();
+        break;
+
+      case 3:
+        circlePressHandler();
+        break;
+    }
+
+  }
+
+  function dragHandler(event) {
+    var tPoint = view.viewToProject(new Point(event.position.x, event.position.y));
+    switch (drawMode) {
+      case 1:
+        lineDragHandler(tPoint);
+        break;
+
+      case 2:
+        rectDragHandler(tPoint);
+        break;
+
+      case 3:
+        circleDragHandler(tPoint);
+        break;
+    }
+  }
+
+  function dragEndHandler(event) {
+    var tPoint = view.viewToProject(new Point(event.position.x, event.position.y));
+    switch (drawMode) {
+      case 1:
+        lineDragEndHandler(tPoint);
+        break;
+
+      case 2:
+        rectDragEndHandler(tPoint);
+        break;
+
+      case 3:
+        circleDragEndHandler(tPoint);
+        break;
+    }
+
+    startPoint = null;
+  }
+
+
+  // Helper function
+  function linePressHandler() {
+    currentLine = {
+      line: new Path(),
+      text: null,
+      offset: null
+    };
+    currentLine.line.strokeColor = 'red';
+    currentLine.line.strokeCap = 'round';
+    currentLine.line.strokeWidth = 30;
+    currentLine.line.add(startPoint);
+  }
+
+  function lineDragHandler(current) {
+    var firstSeg = currentLine.line.firstSegment;
+    if (currentLine.text === null) {
+      var newText = createText(firstSeg.point, current, 2, 20);
+      currentLine.text = newText.text;
+      currentLine.offset = newText.offset;
+    }
+    currentLine.text.remove();
+    var nText = createText(firstSeg.point, current, 2, 20);
+    currentLine.text = nText.text;
+    currentLine.offset = nText.offset;
+    currentLine.line.removeSegments();
+    currentLine.line.add(firstSeg, current);
+  }
+
+  function lineDragEndHandler(current) {
+    lines.push(currentLine);
+    currentLine = null;
+  }
+
+  function circlePressHandler() {
+    currentCircle = {
+      circle: null,
+      scale: {
+        line: new Path(),
+        text: null,
+        offset: null
+      }
+    };
+    currentCircle.scale.line.strokeColor = '#222';
+    currentCircle.scale.line.strokeCap = 'round';
+    currentCircle.scale.line.strokeWidth = 30;
+    currentCircle.scale.line.dashArray = [70, 70];
+    currentCircle.scale.line.add(startPoint);
+
+  }
+
+  function circleDragHandler(current) {
+    if (currentCircle.circle === null) {
+      currentCircle.circle = createCircle(startPoint, startPoint.getDistance(current));
+    }
+    currentCircle.circle.remove();
+    currentCircle.circle = createCircle(startPoint, startPoint.getDistance(current));
+
+    var firstSeg = currentCircle.scale.line.firstSegment;
+    currentCircle.scale.line.removeSegments();
+    currentCircle.scale.line.add(firstSeg, current);
+    var radius = currentCircle.circle.radius;
+    var maxScale = Math.min(20.0, radius / 50.0);
+    if (currentCircle.scale.text === null) {
+      var newText = createText(firstSeg.point, current, 1, maxScale);
+      currentCircle.scale.text = newText.text;
+      currentCircle.scale.offset = newText.offset;
+    }
+    currentCircle.scale.text.remove();
+    var nText = createText(firstSeg.point, current, 1, maxScale);
+    currentCircle.scale.text = nText.text;
+    currentCircle.scale.offset = nText.offset;
+
+    var dashWidth = radius / 10.0;
+    dashWidth = Math.max(5, dashWidth);
+    dashWidth = Math.min(30, dashWidth);
+
+    var dashLen = radius / 7.0;
+    dashLen = Math.max(10, dashLen);
+    dashLen = Math.min(70, dashLen);
+    currentCircle.scale.line.strokeWidth = dashWidth;
+    currentCircle.scale.line.dashArray = [dashLen, dashLen];
+
+  }
+
+  function circleDragEndHandler(current) {
+    if (currentCircle !== null) {
+      var c = createCircle(currentCircle.circle.position, currentCircle.circle.radius);
+      var s = {
+        line: currentCircle.scale.line.clone(),
+        text: currentCircle.scale.text.clone(),
+        offset: currentCircle.scale.offset.clone()
+      };
+      circles.push({
+        circle: c,
+        scale: s
+      });
+      s.line.visible = false;
+      s.text.visible = false;
+      c.onMouseEnter = function() {
+        s.line.visible = true;
+        s.text.visible = true;    
+      };
+      
+      c.onMouseLeave = function() {
+        s.line.visible = false;
+        s.text.visible = false;    
+      };
+
+      currentCircle.circle.remove();
+      currentCircle.scale.line.remove();
+      currentCircle.scale.text.remove();
+    }
+  }
+
+  function rectPressHandler() {
+    currentRect = {
+      rect: null,
+      lText: null,
+      lOff: null,
+      bText: null,
+      bOff: null
+    };
+  }
+
+  function rectDragHandler(current) {
+    if (currentRect.rect === null) {
+      currentRect.rect = createRect(startPoint, current);
+    }
+    currentRect.rect.remove();
+    currentRect.rect = createRect(startPoint, current);
+    
+    if (currentRect.lText === null) {
+      var newText = createText(currentRect.rect.bounds.topLeft, currentRect.rect.bounds.topRight, 2, 20);
+      currentRect.lText = newText.text;
+      currentRect.lOff = newText.offset;
+    }
+    currentRect.lText.remove();
+    var nText = createText(currentRect.rect.bounds.topLeft, currentRect.rect.bounds.topRight, 2, 20);
+    currentRect.lText = nText.text;
+    currentRect.lOff = nText.offset;
+    
+    if (currentRect.bText === null) {
+      var newRText = createText(currentRect.rect.bounds.topRight, currentRect.rect.bounds.bottomRight, 2, 20);
+      currentRect.bText = newRText.text;
+      currentRect.bOff = newRText.offset;
+    }
+    currentRect.bText.remove();
+    var nRText = createText(currentRect.rect.bounds.topRight, currentRect.rect.bounds.bottomRight, 2, 20);
+    currentRect.bText = nRText.text;
+    currentRect.bOff = nRText.offset;
+
+  }
+
+  function rectDragEndHandler(current) {
+    if (currentRect.rect !== null) {
+      var finalRect = createRect(startPoint, current);
+      var obj = {
+        rect: finalRect,
+        lText: currentRect.lText.clone(),
+        lOff: currentRect.lOff,
+        bText: currentRect.bText.clone(),
+        bOff: currentRect.bOff
+      };
+      rects.push(obj);
+      obj.lText.visible = false;
+      obj.bText.visible = false;
+      finalRect.onMouseEnter = function () {
+        obj.lText.visible = true;
+        obj.bText.visible = true;
+      };
+
+      finalRect.onMouseLeave = function () {
+        obj.lText.visible = false;
+        obj.bText.visible = false;
+      };
+
+      currentRect.rect.remove();
+      currentRect.lText.remove();
+      currentRect.bText.remove();
+    }
+  }
+
+
+  function createCircle(center, radius) {
+    var c = new Shape.Circle(center, radius);
+    c.strokeColor = 'red';
+    c.fillColor = 'rgba(255, 255, 255, 0.05)';
+    c.strokeWidth = 30;
+    return c;
+  }
+
+  function createRect(from, to) {
+    var c = new Shape.Rectangle(from, to);
+    c.strokeColor = 'red';
+    c.fillColor = 'rgba(255, 255, 255, 0.05)';
+    c.strokeWidth = 30;
+    return c;
+  }
+
+  function createText(start, end, sl, su) {
+    var yOff = -1;
+    var xOff = 1;
+    var z = viewer.viewport.getZoom();
+    var rot = angleFromHorizontal(start, end);
+    // If in first or third quadrand
+    if ((end.x > start.x && end.y < start.y) || (end.x < start.x && end.y > start.y)) {
+      rot = rot * -1;
+      xOff = xOff * -1;
+    }
+
+    var offset = 100.0 / z;
+    offset = Math.min(100.0, offset);
+    offset = Math.max(20.0, offset);
+    var off = new Point(offset * xOff, offset * yOff);
+
+    var text = new PointText(midPoint(start, end).add(off));
+    text.justification = 'center';
+    text.fillColor = 'black';
+    text.rotation = rot;
+    text.fontFamily = 'sans serif';
+
+    var scaling = 20.0 / z;
+    scaling = Math.max(sl, scaling);
+    scaling = Math.min(su, scaling);
+    text.scaling = new Point(scaling, scaling);
+    text.fontWeight = 600;
+
+    text.content = start.getDistance(end).toFixed(2);
+    return {
+      text: text,
+      offset: new Point(xOff, yOff),
+    };
+
+  }
+
+  function midPoint(a, b) {
+    return new Point((a.x + b.x) / 2, (a.y + b.y) / 2);
+  }
+
+  function angleFromHorizontal(a, b) {
+    var max = Point.max(a, b);
+    var min = Point.min(a, b);
+    var vec = max.subtract(min);
+
+    return vec.getAngle(new Point(1, 0));
+  }
 });
