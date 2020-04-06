@@ -14,20 +14,20 @@ $(document).ready(function () {
   OpenSeadragon.setString('Tool.close', 'Close');
 
   // Image Initialization
-  // var image = {
-  //   Image: {
-  //     xmlns: "http://schemas.microsoft.com/deepzoom/2008",
-  //     Url: "//openseadragon.github.io/example-images/duomo/duomo_files/",
-  //     Format: "jpg",
-  //     Overlap: "2",
-  //     TileSize: "256",
-  //     Size: {
-  //       Width: "13920",
-  //       Height: "10200"
-  //     }
-  //   }
-  // };
-  var image = "http://histology.slidesportal.co.uk/jclinpathtest/1.dzi";
+  var image = {
+    Image: {
+      xmlns: "http://schemas.microsoft.com/deepzoom/2008",
+      Url: "//openseadragon.github.io/example-images/duomo/duomo_files/",
+      Format: "jpg",
+      Overlap: "2",
+      TileSize: "256",
+      Size: {
+        Width: "13920",
+        Height: "10200"
+      }
+    }
+  };
+  
 
   // Variable declarations
   var ppm = 1000000;
