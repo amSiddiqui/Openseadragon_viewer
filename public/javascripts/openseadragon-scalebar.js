@@ -292,7 +292,7 @@
             if (this.location === $.ScalebarLocation.TOP_RIGHT) {
                 var barWidth = this.divElt.offsetWidth;
                 var container = this.viewer.container;
-                var x = container.offsetWidth - barWidth;
+                var x = (container.offsetWidth / 2.0) - (barWidth / 2.0);
                 var y = 0;
                 if (this.stayInsideImage) {
                     var pixel = this.viewer.viewport.pixelFromPoint(

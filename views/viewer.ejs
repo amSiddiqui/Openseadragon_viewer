@@ -18,7 +18,6 @@
 
 
     <script src="/javascripts/openseadragon.min.js"></script>
-    <script src="/javascripts/openseadragonselection.js"></script>
     <script src="/javascripts/openseadragon-scalebar.js"></script>
 
 
@@ -91,9 +90,6 @@
 
                 <div class="separator"></div>
 
-                <button title="Annotation" id="draw-btn" class=" btn btn-round-blue"><i class="fas fa-pen"></i></button>
-                <div class="separator"></div>
-
                 <button title="Screenshot" id="screenshot-btn" class=" btn btn-round-purple"><i
                         class="fas fa-camera"></i></button>
 
@@ -123,28 +119,6 @@
                         <label for="annotation-text" class="label">Annotation Text</label>
                         <textarea name="annotation-text" id="annotation-text" cols="15" rows="5"
                             class="textarea"></textarea>
-                        <div class="columns has-text-centered">
-                            <div class="column is-3">
-                                <label class="label">Border Color</label>
-                                <div id="annotation-border-picker" class="color-picker"></div>
-                            </div>
-                            <div class="column is-5">
-                                <label class="label">Border Width</label>
-                                <div class="columns">
-                                    <div class="column is-6">
-                                        <input type="number" name="border-width" id="border-width-input"
-                                            class="input is-rounded" min="2" max="15" value="4">
-                                    </div>
-                                    <div class="column">
-                                        <div id="border-example"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="column">
-                                <label class="label">Background Color</label>
-                                <div id="annotation-background-picker" class="color-picker"></div>
-                            </div>
-                        </div>
                     </div>
                 </section>
                 <footer class="modal-card-foot">

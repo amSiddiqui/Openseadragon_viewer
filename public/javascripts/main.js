@@ -29,14 +29,12 @@ $(document).ready(function () {
   };
 
   // Variable declarations
+  var ppm = 1000000;
   var viewer_is_new;
   var bm_center;
   var bm_zoom;
   var bm_goto;
-  var selection;
-  var selection_enabled = false; // Stores wheather the user is in the annotation selection mode
   var overlay_index = 0; // Stores the current overlay index
-  var current_overlay; // Stores the Rect of the current overlay that is drawn
   var overlays = []; // Stores all the overlays created
   var rotation_enabled = false; // Stores whether the rotation slider is visible
   var rotator; // Stores the Rotation slider data
@@ -51,6 +49,25 @@ $(document).ready(function () {
   var paperOverlay;
 
 
+
+  /*
+  0 - Drawing Mode off
+  1 - Pen Mode
+  2 - Rect Mode
+  3 - Circle Mode
+  */
+  var drawMode = 0;
+  var startPoint = null;
+  var currentLine = null;
+  var lines = [];
+
+  var currentRect = null;
+  var rects = [];
+
+  var currentCircle = null;
+  var circles = [];
+  var lastOverlay;
+
   // Initialization of Openseadragon viewer
   var viewer = OpenSeadragon({
     id: "openseadragon-viewer",
@@ -61,7 +78,7 @@ $(document).ready(function () {
     constrainDuringPan: false,
     maxZoomPixelRatio: 2,
     minPixelRatio: 0.5,
-    minZoomLevel: 0.65,
+    minZoomLevel: 0.653,
     visibilityRatio: 1,
     zoomPerScroll: 2,
     crossOriginPolicy: "Anonymous",
@@ -130,7 +147,7 @@ $(document).ready(function () {
       line.text.position = mid.add(off);
     });
 
-    rects.forEach(function(rect) {
+    rects.forEach(function (rect) {
       rect.lText.scaling = new Point(scaling, scaling);
       var mid = midPoint(rect.rect.bounds.topLeft, rect.rect.bounds.topRight);
       var off = new Point(offset * rect.lOff.x, offset * rect.lOff.y);
@@ -143,7 +160,7 @@ $(document).ready(function () {
       rect.bText.position = mid.add(off);
     });
 
-    circles.forEach(function(circle) {
+    circles.forEach(function (circle) {
       var maxScale = Math.min(20.0, circle.circle.radius / 50.0);
       scaling = Math.min(maxScale, scaling);
       scaling = Math.max(1, scaling);
@@ -160,29 +177,19 @@ $(document).ready(function () {
   // Scalebar plugin
   viewer.scalebar({
     type: OpenSeadragon.ScalebarType.MICROSCOPY,
-    pixelsPerMeter: 1000000,
+    pixelsPerMeter: ppm,
     minWidth: "160px",
-    location: OpenSeadragon.ScalebarLocation.BOTTOM_LEFT,
-    xOffset: 40,
+    location: OpenSeadragon.ScalebarLocation.TOP_RIGHT,
+    // xOffset: 40,
     yOffset: 20,
     stayInsideImage: false,
-    color: "rgb(100, 100, 100)",
-    fontColor: "rgb(0, 0, 0)",
-    backgroundColor: "rgb(255, 255, 255, 0.8)",
+    color: "blue",
+    fontColor: "blue",
+    backgroundColor: "rgb(255, 255, 255, 0)",
     fontSize: "small",
     barThickness: 2
   });
 
-  // Selection plugin
-  selection = viewer.selection({
-    prefixUrl: '/images/',
-    showSelectionControl: false,
-    showConfirmDenyButtons: true,
-    toggleButton: document.getElementById('draw-btn'),
-    onSelection: onSelection,
-    returnPixelCoordinates: false,
-    allowRotation: false,
-  });
 
   // Paperjs overlay
   paperOverlay = viewer.paperjsOverlay();
@@ -223,94 +230,94 @@ $(document).ready(function () {
 
   // Color picker initialization
   // Overlay Border
-  annotation_border_picker = Pickr.create({
-    el: '#annotation-border-picker',
-    theme: 'nano', // or 'monolith', or 'nano'
-    default: default_border_color,
+  // annotation_border_picker = Pickr.create({
+  //   el: '#annotation-border-picker',
+  //   theme: 'nano', // or 'monolith', or 'nano'
+  //   default: default_border_color,
 
-    swatches: [
-      'red',
-      'yellow',
-      'green',
-      'black',
-      'orange',
-      'purple',
-      'gray'
-    ],
+  //   swatches: [
+  //     'red',
+  //     'yellow',
+  //     'green',
+  //     'black',
+  //     'orange',
+  //     'purple',
+  //     'gray'
+  //   ],
 
-    components: {
+  //   components: {
 
-      // Main components
-      preview: true,
-      opacity: false,
-      hue: true,
+  //     // Main components
+  //     preview: true,
+  //     opacity: false,
+  //     hue: true,
 
-      // Input / output Options
-      interaction: {
-        hex: false,
-        rgba: false,
-        hsla: false,
-        hsva: false,
-        cmyk: false,
-        input: false,
-        clear: true,
-        save: true
-      }
-    }
-  });
+  //     // Input / output Options
+  //     interaction: {
+  //       hex: false,
+  //       rgba: false,
+  //       hsla: false,
+  //       hsva: false,
+  //       cmyk: false,
+  //       input: false,
+  //       clear: true,
+  //       save: true
+  //     }
+  //   }
+  // });
 
-  // Overlay Background
-  annotation_color_picker = Pickr.create({
-    el: '#annotation-background-picker',
-    theme: 'nano', // or 'monolith', or 'nano'
-    default: default_background_color,
+  // // Overlay Background
+  // annotation_color_picker = Pickr.create({
+  //   el: '#annotation-background-picker',
+  //   theme: 'nano', // or 'monolith', or 'nano'
+  //   default: default_background_color,
 
-    swatches: [
-      'rgba(244, 67, 54, 1)',
-      'rgba(233, 30, 99, 0.95)',
-      'rgba(156, 39, 176, 0.9)',
-      'rgba(103, 58, 183, 0.85)',
-      'rgba(63, 81, 181, 0.8)',
-      'rgba(33, 150, 243, 0.75)',
-      'rgba(3, 169, 244, 0.7)',
-      'rgba(0, 188, 212, 0.7)',
-      'rgba(0, 150, 136, 0.75)',
-      'rgba(76, 175, 80, 0.8)',
-      'rgba(139, 195, 74, 0.85)',
-      'rgba(205, 220, 57, 0.9)',
-      'rgba(255, 235, 59, 0.95)',
-      'rgba(255, 193, 7, 1)'
-    ],
+  //   swatches: [
+  //     'rgba(244, 67, 54, 1)',
+  //     'rgba(233, 30, 99, 0.95)',
+  //     'rgba(156, 39, 176, 0.9)',
+  //     'rgba(103, 58, 183, 0.85)',
+  //     'rgba(63, 81, 181, 0.8)',
+  //     'rgba(33, 150, 243, 0.75)',
+  //     'rgba(3, 169, 244, 0.7)',
+  //     'rgba(0, 188, 212, 0.7)',
+  //     'rgba(0, 150, 136, 0.75)',
+  //     'rgba(76, 175, 80, 0.8)',
+  //     'rgba(139, 195, 74, 0.85)',
+  //     'rgba(205, 220, 57, 0.9)',
+  //     'rgba(255, 235, 59, 0.95)',
+  //     'rgba(255, 193, 7, 1)'
+  //   ],
 
-    components: {
+  //   components: {
 
-      // Main components
-      preview: true,
-      opacity: true,
-      hue: true,
+  //     // Main components
+  //     preview: true,
+  //     opacity: true,
+  //     hue: true,
 
-      // Input / output Options 
-      interaction: {
-        hex: false,
-        rgba: false,
-        hsla: false,
-        hsva: false,
-        cmyk: false,
-        input: false,
-        clear: true,
-        save: true
-      }
-    }
-  });
+  //     // Input / output Options 
+  //     interaction: {
+  //       hex: false,
+  //       rgba: false,
+  //       hsla: false,
+  //       hsva: false,
+  //       cmyk: false,
+  //       input: false,
+  //       clear: true,
+  //       save: true
+  //     }
+  //   }
+  // });
 
-  // Color picker events
-  annotation_color_picker.on('save', function (event) {
-    annotation_color_picker.hide();
-  });
+  // // Color picker events
+  // annotation_color_picker.on('save', function (event) {
+  //   annotation_color_picker.hide();
+  // });
 
-  annotation_border_picker.on('save', function (event) {
-    annotation_border_picker.hide();
-  });
+  // annotation_border_picker.on('save', function (event) {
+  //   annotation_border_picker.hide();
+  // });
 
 
   // Helper Functions
@@ -322,28 +329,17 @@ $(document).ready(function () {
     $("#zoom-buttons").children().removeClass("btn-active");
   }
 
-  function addOverlay(x, y, h, w, toolTipText, bwidth, borderColor, backgroundColor) {
-    var ele = document.createElement("div");
-    ele.id = "overlay-" + overlay_index;
-    overlay_index++;
-    $(ele).css({
-      "border": bwidth + "px solid " + borderColor,
-      "background-color": backgroundColor
-    });
-    viewer.addOverlay({
-      element: ele,
-      location: new OpenSeadragon.Rect(x, y, h, w)
-    });
-
-
+  function addOverlay(text, overlay) {
     // Add Tooltip with text
-    var tooltip = createCard(toolTipText, ele);
+    var tooltip = createCard(text, overlay.hover);
     var deleteButton = tooltip.delete;
+    overlay.annotation = text;
+    overlay.tooltip = tooltip.card;
 
     var editButton = tooltip.edit;
     var confirmationModal = $("#delete-confirm").clone();
     $(confirmationModal).children(".modal-content").children(".card").css({
-      "width": "350px",
+      "width": "300px",
       "margin": "auto"
     });
     $(confirmationModal).attr('id', '');
@@ -353,9 +349,6 @@ $(document).ready(function () {
       $(confirmationModal).addClass('is-active');
     });
 
-    $(confirmationModal).children('button').click(function () {
-      $(confirmationModal).removeClass('is-active');
-    });
 
     $(confirmationModal).children().find("#cancel-button").click(function () {
       $(confirmationModal).removeClass('is-active');
@@ -365,36 +358,58 @@ $(document).ready(function () {
       $(confirmationModal).removeClass('is-active');
       $(confirmationModal).remove();
       $(tooltip).remove();
-      viewer.removeOverlay(ele);
+      if (overlay.type == 'c') {
+        overlay.circle.remove();
+        overlay.scale.text.remove();
+        overlay.scale.line.remove();
+        circles.splice(overlay.id, 1);
+        for (var i = 0; i < circles.length; i++) {
+          circles[i].id = i;
+        }
+      }
+
+      if (overlay.type == 'r') {
+        overlay.rect.remove();
+        overlay.lText.remove();
+        overlay.bText.remove();
+        rects.splice(overlay.id, 1);
+        for (var j = 0; j < rects.length; j++) {
+          rects[j].id = j;
+        }
+      }
+
     });
 
     $(editButton).click(function () {
       $("#annotation-modal-title").html("Edit Annotation");
       $("#annotation-modal").addClass("is-active");
+      $("#annotation-save-btn").val(overlay.type+'-'+overlay.id);
       editMode = true;
-      $("#annotation-text").val(overlays[overlay_index - 1].text);
-      annotation_border_picker.setColor(overlays[overlay_index - 1].border);
-      annotation_color_picker.setColor(overlays[overlay_index - 1].backgound);
-      $("#border-width-input").val(overlays[overlay_index - 1].width);
-      currentEditingOverlay = {
-        id: overlay_index - 1,
-        overlay: ele,
-        tooltip: tooltip
-      };
-    });
-
-    overlays.push({
-      overlay: ele,
-      text: toolTipText,
-      width: bwidth,
-      border: borderColor,
-      backgound: backgroundColor
+      $("#annotation-text").val(overlay.annotation);
+      currentEditingOverlay = overlay;
     });
 
     $("#page").append(tooltip.card);
     tooltip = $(tooltip.card);
+    var shape;
+    if (overlay.type == 'r') {
+      shape = overlay.rect;
+    }else{
+      shape = overlay.circle;
+    }
+    
 
-    $(ele).hover(function (e) {
+    shape.onMouseEnter = function(e) {
+      if (overlay.type == 'c') {
+        overlay.scale.text.visible = true;
+        overlay.scale.line.visible = true;
+      }else{
+        overlay.bText.visible = true;
+        overlay.lText.visible = true;
+      }
+      overlay.hover = true;
+
+      e = e.event;
       if (recal_card_pos) {
         var mouseX = e.pageX,
           mouseY = e.pageY,
@@ -421,17 +436,29 @@ $(document).ready(function () {
         tooltip.show();
         recal_card_pos = false;
       }
-    }, function () {
+    };
+
+    shape.onMouseLeave = function(e) {
       if (!tooltip.is(":hover")) {
         tooltip.hide();
         recal_card_pos = true;
       }
+
+      if (overlay.type == 'c') {
+        overlay.scale.text.visible = false;
+        overlay.scale.line.visible = false;
+      }else{
+        overlay.bText.visible = false;
+        overlay.lText.visible = false;
+      }
+      overlay.hover = false;
+
       annotation_closed = false;
-    });
+    };
 
   }
 
-  function createCard(message, overlay) {
+  function createCard(message, hovering) {
     var card = document.createElement('div');
     $(card).addClass('card');
     var closeButton = document.createElement('a');
@@ -439,7 +466,7 @@ $(document).ready(function () {
     $(closeButton).addClass('card-close');
     $(card).append(closeButton);
 
-    var width = message.length == 0 ? "200px" : "300px";
+    var width = message.length == 0 ? "180px" : "200px";
     $(card).css("width", width);
     if (message.length != 0) {
       var cardContent = document.createElement('div');
@@ -483,9 +510,8 @@ $(document).ready(function () {
       annotation_closed = true;
     });
 
-
     $(card).hover(function () {}, function () {
-      if (!$(overlay).is(":hover")) {
+      if (!hovering) {
         $(card).hide();
         recal_card_pos = true;
       }
@@ -499,41 +525,25 @@ $(document).ready(function () {
   }
 
   function closeAnnotation() {
-    selection_enabled = false;
-    selection.disable();
-    $("#draw-btn").removeClass('btn-active');
     $("canvas").removeClass('cursor-crosshair');
-  }
-
-  function onSelection(rect) {
-    $("#annotation-modal").addClass("is-active");
-    closeAnnotation();
-    current_overlay = rect;
   }
 
   function resetAnnotationModal() {
     $("#annotation-text").val('');
-    $("#border-width-input").val(4);
-    annotation_border_picker.setColor(default_border_color);
-    annotation_color_picker.setColor(default_background_color);
     $("#annotation-modal-title").html("Add Annotation");
   }
 
-  function updateAnnotation(text, width, background_color, border_color) {
-    $(currentEditingOverlay.overlay).css({
-      "background-color": background_color,
-      "border": width + "px solid " + border_color
-    });
-    if (text.length == 0 && overlays[currentEditingOverlay.id].text.length != 0) {
+  function updateAnnotation(text) {
+    if (text.length == 0 && currentEditingOverlay.annotation.length !== 0) {
       currentEditingOverlay.tooltip.find(".card-content").remove();
-    } else if (text.length != 0 && overlays[currentEditingOverlay.id].text.length == 0) {
+    } else if (text.length != 0 && currentEditingOverlay.annotation.length === 0) {
       var cardContent = document.createElement('div');
       $(cardContent).addClass('card-content');
       var paragraph = document.createElement('p');
       $(paragraph).append(text);
       $(cardContent).append(paragraph);
       $(currentEditingOverlay.tooltip).append(cardContent);
-    } else if (text.length != 0 && overlays[currentEditingOverlay.id].text.length != 0) {
+    } else if (text.length != 0 && currentEditingOverlay.annotation.length !== 0) {
       $(currentEditingOverlay.tooltip).find(".card-content").children('p').html(text);
     }
 
@@ -542,19 +552,6 @@ $(document).ready(function () {
   // Event Handlers
 
   // Toolbar Buttons
-  $('#draw-btn').click(function (evt) {
-    if (selection_enabled) {
-      selection.disable();
-      $(this).removeClass('btn-active');
-      $("canvas").removeClass('cursor-crosshair');
-    } else {
-      selection.enable();
-      $(this).addClass('btn-active');
-      $("canvas").addClass('cursor-crosshair');
-    }
-    selection_enabled = !selection_enabled;
-
-  });
 
   $("#zoomin-btn").click(function () {
     resetZoomButtons();
@@ -618,18 +615,21 @@ $(document).ready(function () {
     closeAnnotation();
   });
 
-  $("#annotation-save-btn").click(function () {
+  $("#annotation-save-btn").click(function (event) {
     $("#annotation-modal").removeClass("is-active");
     var text = $("#annotation-text").val();
-    var width = $("#border-width-input").val();
-    var background_color = annotation_color_picker.getColor().toHEXA().toString();
-    var border_color = annotation_border_picker.getColor().toHEXA().toString();
     if (editMode) {
-      updateAnnotation(text, width, background_color, border_color);
+      updateAnnotation(text);
     } else {
-      addOverlay(current_overlay.x, current_overlay.y, current_overlay.width, current_overlay.height, text, width, border_color, background_color);
+      if (lastOverlay.type == 'r') {
+        rects.push(lastOverlay);
+      }else if (lastOverlay.type == 'c') {
+        circles.push(lastOverlay);
+      }
+      addOverlay(text, lastOverlay);
     }
     editMode = false;
+    closeAnnotation();
     resetAnnotationModal();
   });
 
@@ -644,6 +644,7 @@ $(document).ready(function () {
     switch (e.keyCode) {
       case 27:
         $("#annotation-modal").removeClass("is-active");
+        drawMode = 0;
         closeAnnotation();
         break;
     }
@@ -661,7 +662,7 @@ $(document).ready(function () {
   // Resize event
   window.onresize = function () {
     paperOverlay.resize();
-    paperOverlay.canvasresize();
+    paperOverlay.resizecanvas();
   };
 
 
@@ -669,51 +670,39 @@ $(document).ready(function () {
   // Install paperjs
   paper.install(window);
 
-  /*
-  0 - Drawing Mode off
-  1 - Pen Mode
-  2 - Rect Mode
-  3 - Circle Mode
-  */
-  var drawMode = 0;
-  var startPoint = null;
-  var currentLine = null;
-  var lines = [];
-
-  var currentRect = null;
-  var rects = [];
-
-  var currentCircle = null;
-  var circles = [];
-
-
   $("#pen-btn").click(function () {
+    $("canvas").addClass('cursor-crosshair');
     if (drawMode !== 1) {
       drawMode = 1;
       viewer.setMouseNavEnabled(false);
     } else {
       drawMode = 0;
+      closeAnnotation();
       viewer.setMouseNavEnabled(true);
     }
   });
 
   $("#rect-btn").click(function () {
+    $("canvas").addClass('cursor-crosshair');
     if (drawMode !== 2) {
       drawMode = 2;
       viewer.setMouseNavEnabled(false);
     } else {
       drawMode = 0;
       viewer.setMouseNavEnabled(true);
+      closeAnnotation();
     }
   });
 
   $("#circle-btn").click(function () {
+    $("canvas").addClass('cursor-crosshair');
     if (drawMode !== 3) {
       drawMode = 3;
       viewer.setMouseNavEnabled(false);
     } else {
       drawMode = 0;
       viewer.setMouseNavEnabled(true);
+      closeAnnotation();
     }
   });
 
@@ -722,12 +711,14 @@ $(document).ready(function () {
     element: viewer.canvas,
     pressHandler: pressHandler,
     dragHandler: dragHandler,
-    dragEndHandler: dragEndHandler
+    dragEndHandler: dragEndHandler,
+    scrollHandler: resetZoomButtons,
   });
   mouseTracker.setTracking(true);
 
 
   function pressHandler(event) {
+
     var transformedPoint = view.viewToProject(new Point(event.position.x, event.position.y));
     startPoint = transformedPoint;
     switch (drawMode) {
@@ -743,7 +734,6 @@ $(document).ready(function () {
         circlePressHandler();
         break;
     }
-
   }
 
   function dragHandler(event) {
@@ -780,6 +770,9 @@ $(document).ready(function () {
     }
 
     startPoint = null;
+    drawMode = 0;
+    viewer.setMouseNavEnabled(true);
+    closeAnnotation();
   }
 
 
@@ -791,7 +784,7 @@ $(document).ready(function () {
       offset: null
     };
     currentLine.line.strokeColor = 'red';
-    currentLine.line.strokeCap = 'round';
+    currentLine.line.fillColor = currentLine.line.strokeColor;
     currentLine.line.strokeWidth = 30;
     currentLine.line.add(startPoint);
   }
@@ -812,7 +805,18 @@ $(document).ready(function () {
   }
 
   function lineDragEndHandler(current) {
-    lines.push(currentLine);
+    var dup = {
+      line: currentLine.line.clone(),
+      text: currentLine.text.clone(),
+      offset: currentLine.offset,
+    };
+
+    lines.push(dup);
+    dup.line.onMouseDown = function(event) {
+      console.log(event);
+    };
+    currentLine.line.remove();
+    currentLine.text.remove();
     currentLine = null;
   }
 
@@ -875,25 +879,24 @@ $(document).ready(function () {
         text: currentCircle.scale.text.clone(),
         offset: currentCircle.scale.offset.clone()
       };
-      circles.push({
+      var obj = {
+        id: circles.length,
+        type: 'c',
         circle: c,
-        scale: s
-      });
-      s.line.visible = false;
-      s.text.visible = false;
-      c.onMouseEnter = function() {
-        s.line.visible = true;
-        s.text.visible = true;    
-      };
-      
-      c.onMouseLeave = function() {
-        s.line.visible = false;
-        s.text.visible = false;    
+        scale: s,
+        hover: false
       };
 
+      lastOverlay = obj;
+
+      s.line.visible = false;
+      s.text.visible = false;
+      
       currentCircle.circle.remove();
       currentCircle.scale.line.remove();
       currentCircle.scale.text.remove();
+      $("#annotation-modal").addClass('is-active');
+      $("#annotation-save-btn").val('c');
     }
   }
 
@@ -913,7 +916,7 @@ $(document).ready(function () {
     }
     currentRect.rect.remove();
     currentRect.rect = createRect(startPoint, current);
-    
+
     if (currentRect.lText === null) {
       var newText = createText(currentRect.rect.bounds.topLeft, currentRect.rect.bounds.topRight, 2, 20);
       currentRect.lText = newText.text;
@@ -923,7 +926,7 @@ $(document).ready(function () {
     var nText = createText(currentRect.rect.bounds.topLeft, currentRect.rect.bounds.topRight, 2, 20);
     currentRect.lText = nText.text;
     currentRect.lOff = nText.offset;
-    
+
     if (currentRect.bText === null) {
       var newRText = createText(currentRect.rect.bounds.topRight, currentRect.rect.bounds.bottomRight, 2, 20);
       currentRect.bText = newRText.text;
@@ -940,28 +943,26 @@ $(document).ready(function () {
     if (currentRect.rect !== null) {
       var finalRect = createRect(startPoint, current);
       var obj = {
+        id: rects.length,
+        type: 'r',
         rect: finalRect,
         lText: currentRect.lText.clone(),
         lOff: currentRect.lOff,
         bText: currentRect.bText.clone(),
-        bOff: currentRect.bOff
+        bOff: currentRect.bOff,
+        hover: false
       };
-      rects.push(obj);
+      lastOverlay = obj;
       obj.lText.visible = false;
       obj.bText.visible = false;
-      finalRect.onMouseEnter = function () {
-        obj.lText.visible = true;
-        obj.bText.visible = true;
-      };
-
-      finalRect.onMouseLeave = function () {
-        obj.lText.visible = false;
-        obj.bText.visible = false;
-      };
-
       currentRect.rect.remove();
       currentRect.lText.remove();
       currentRect.bText.remove();
+
+      // Open annotation menu
+      resetAnnotationModal();
+      $("#annotation-modal").addClass("is-active");
+      $("#annotation-save-btn").val('r');
     }
   }
 
@@ -1010,12 +1011,32 @@ $(document).ready(function () {
     text.scaling = new Point(scaling, scaling);
     text.fontWeight = 600;
 
-    text.content = start.getDistance(end).toFixed(2);
+    text.content = converterToSI(start.getDistance(end));
     return {
       text: text,
       offset: new Point(xOff, yOff),
     };
 
+  }
+
+  function converterToSI(val) {
+    val = val / ppm;
+    var unit = 'm';
+    // Convert to mm 
+    val = val * 1000.0;
+    unit = '\u339c';
+    var test = parseInt(val * 1000);
+    if (test.toString().length <= 2) {
+      val = val * 1000.0;
+      unit = '\u339b';
+      test = parseInt(val * 1000);
+      if (test.toString().length <= 2) {
+        val = val * 1000.0;
+        unit = '\u339a';
+      }
+    }
+    val = val.toFixed(2);
+    return val.toString()+unit;
   }
 
   function midPoint(a, b) {
@@ -1029,4 +1050,6 @@ $(document).ready(function () {
 
     return vec.getAngle(new Point(1, 0));
   }
+
+
 });
