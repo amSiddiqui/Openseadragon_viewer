@@ -14,19 +14,20 @@ $(document).ready(function () {
   OpenSeadragon.setString('Tool.close', 'Close');
 
   // Image Initialization
-  var image = {
-    Image: {
-      xmlns: "http://schemas.microsoft.com/deepzoom/2008",
-      Url: "//openseadragon.github.io/example-images/duomo/duomo_files/",
-      Format: "jpg",
-      Overlap: "2",
-      TileSize: "256",
-      Size: {
-        Width: "13920",
-        Height: "10200"
-      }
-    }
-  };
+  // var image = {
+  //   Image: {
+  //     xmlns: "http://schemas.microsoft.com/deepzoom/2008",
+  //     Url: "//openseadragon.github.io/example-images/duomo/duomo_files/",
+  //     Format: "jpg",
+  //     Overlap: "2",
+  //     TileSize: "256",
+  //     Size: {
+  //       Width: "13920",
+  //       Height: "10200"
+  //     }
+  //   }
+  // };
+  var image = "http://histology.slidesportal.co.uk/jclinpathtest/1.dzi";
 
   // Variable declarations
   var ppm = 1000000;
@@ -141,22 +142,41 @@ $(document).ready(function () {
     offset = Math.min(150.0, offset);
     offset = Math.max(30.0, offset);
     lines.forEach(function (line) {
+      var textRot = line.text.rotation * (Math.PI / 180.0);
       line.text.scaling = new Point(scaling, scaling);
       var mid = midPoint(line.line.firstSegment.point, line.line.lastSegment.point);
-      var off = new Point(offset * line.offset.x, offset * line.offset.y);
+      var off = new Point( Math.abs(Math.sin(textRot))*offset * line.offset.x, Math.abs(Math.cos(textRot)) *offset * line.offset.y);
       line.text.position = mid.add(off);
     });
 
+
     rects.forEach(function (rect) {
-      rect.lText.scaling = new Point(scaling, scaling);
+      var topLeft = rect.rect.bounds.topLeft;
+      var topRight = rect.rect.bounds.topRight;
+      var bottomRight = rect.rect.bounds.bottomRight;
+      var length = topLeft.getDistance(topRight);
+      var breadth = topRight.getDistance(bottomRight);
+      var lMax = length / 50.0;
+      lMax = Math.min(20, lMax);
+      lMax = Math.max(1, lMax);
+
+      var bMax = breadth / 50.0;
+      bMax = Math.min(20, bMax);
+      bMax = Math.max(1, bMax);
+      var rScaling = Math.max(1, scaling);
+      rScaling = Math.min(lMax, rScaling);
+
+      rect.lText.scaling = new Point(rScaling, rScaling);
       var mid = midPoint(rect.rect.bounds.topLeft, rect.rect.bounds.topRight);
-      var off = new Point(offset * rect.lOff.x, offset * rect.lOff.y);
+      var off = new Point(0, offset * rect.lOff.y);
       rect.lText.position = mid.add(off);
 
+      rScaling = Math.max(1, scaling);
+      rScaling = Math.min(bMax, rScaling);
 
-      rect.bText.scaling = new Point(scaling, scaling);
+      rect.bText.scaling = new Point(rScaling, rScaling);
       mid = midPoint(rect.rect.bounds.topRight, rect.rect.bounds.bottomRight);
-      off = new Point(offset * rect.bOff.x, offset * rect.bOff.y);
+      off = new Point(offset * rect.bOff.x, 0);
       rect.bText.position = mid.add(off);
     });
 
@@ -166,7 +186,8 @@ $(document).ready(function () {
       scaling = Math.max(1, scaling);
       circle.scale.text.scaling = new Point(scaling, scaling);
       var mid = midPoint(circle.scale.line.firstSegment.point, circle.scale.line.lastSegment.point);
-      var off = new Point(offset * circle.scale.offset.x, offset * circle.scale.offset.y);
+      var textRot = circle.scale.text.rotation * (Math.PI / 180.0);
+      var off = new Point( Math.abs(Math.sin(textRot))*offset * circle.scale.offset.x, Math.abs(Math.cos(textRot)) *offset * circle.scale.offset.y);
       circle.scale.text.position = mid.add(off);
     });
 
@@ -383,7 +404,7 @@ $(document).ready(function () {
     $(editButton).click(function () {
       $("#annotation-modal-title").html("Edit Annotation");
       $("#annotation-modal").addClass("is-active");
-      $("#annotation-save-btn").val(overlay.type+'-'+overlay.id);
+      $("#annotation-save-btn").val(overlay.type + '-' + overlay.id);
       editMode = true;
       $("#annotation-text").val(overlay.annotation);
       currentEditingOverlay = overlay;
@@ -394,16 +415,16 @@ $(document).ready(function () {
     var shape;
     if (overlay.type == 'r') {
       shape = overlay.rect;
-    }else{
+    } else {
       shape = overlay.circle;
     }
-    
 
-    shape.onMouseEnter = function(e) {
+
+    shape.onMouseEnter = function (e) {
       if (overlay.type == 'c') {
         overlay.scale.text.visible = true;
         overlay.scale.line.visible = true;
-      }else{
+      } else {
         overlay.bText.visible = true;
         overlay.lText.visible = true;
       }
@@ -438,7 +459,7 @@ $(document).ready(function () {
       }
     };
 
-    shape.onMouseLeave = function(e) {
+    shape.onMouseLeave = function (e) {
       if (!tooltip.is(":hover")) {
         tooltip.hide();
         recal_card_pos = true;
@@ -447,7 +468,7 @@ $(document).ready(function () {
       if (overlay.type == 'c') {
         overlay.scale.text.visible = false;
         overlay.scale.line.visible = false;
-      }else{
+      } else {
         overlay.bText.visible = false;
         overlay.lText.visible = false;
       }
@@ -510,11 +531,10 @@ $(document).ready(function () {
       annotation_closed = true;
     });
 
-    $(card).hover(function () {}, function () {
-      if (!hovering) {
+    $(card).hover(function () {
+    }, function () {
         $(card).hide();
         recal_card_pos = true;
-      }
     });
 
     return {
@@ -610,6 +630,17 @@ $(document).ready(function () {
 
   $(".annotation-modal-close ").click(function () {
     $("#annotation-modal").removeClass("is-active");
+    if (!editMode) {
+      if (lastOverlay.type == 'r') {
+        lastOverlay.rect.remove();
+        lastOverlay.lText.remove();
+        lastOverlay.bText.remove();
+      }else if (lastOverlay.type == 'c') {
+        lastOverlay.circle.remove();
+        lastOverlay.scale.text.remove();
+        lastOverlay.scale.line.remove();
+      }
+    }
     editMode = false;
     resetAnnotationModal();
     closeAnnotation();
@@ -623,7 +654,7 @@ $(document).ready(function () {
     } else {
       if (lastOverlay.type == 'r') {
         rects.push(lastOverlay);
-      }else if (lastOverlay.type == 'c') {
+      } else if (lastOverlay.type == 'c') {
         circles.push(lastOverlay);
       }
       addOverlay(text, lastOverlay);
@@ -638,17 +669,6 @@ $(document).ready(function () {
     $("#border-example").css("height", height);
   });
 
-
-  // Document key events
-  $(document).keydown(function (e) {
-    switch (e.keyCode) {
-      case 27:
-        $("#annotation-modal").removeClass("is-active");
-        drawMode = 0;
-        closeAnnotation();
-        break;
-    }
-  });
 
   // Document Click Events
   $(document).click(function (event) {
@@ -716,6 +736,9 @@ $(document).ready(function () {
   });
   mouseTracker.setTracking(true);
 
+  $("#page").click(function(event) {
+    console.log(event);
+  });
 
   function pressHandler(event) {
 
@@ -812,9 +835,7 @@ $(document).ready(function () {
     };
 
     lines.push(dup);
-    dup.line.onMouseDown = function(event) {
-      console.log(event);
-    };
+    
     currentLine.line.remove();
     currentLine.text.remove();
     currentLine = null;
@@ -891,7 +912,7 @@ $(document).ready(function () {
 
       s.line.visible = false;
       s.text.visible = false;
-      
+
       currentCircle.circle.remove();
       currentCircle.scale.line.remove();
       currentCircle.scale.text.remove();
@@ -916,24 +937,36 @@ $(document).ready(function () {
     }
     currentRect.rect.remove();
     currentRect.rect = createRect(startPoint, current);
+    var topLeft = currentRect.rect.bounds.topLeft;
+    var topRight = currentRect.rect.bounds.topRight;
+    var bottomRight = currentRect.rect.bounds.bottomRight;
+    var length = topLeft.getDistance(topRight);
+    var breadth = topRight.getDistance(bottomRight);
+    var lMax = length / 50.0;
+    lMax = Math.min(20, lMax);
+    lMax = Math.max(2, lMax);
+
+    var bMax = breadth / 50.0;
+    bMax = Math.min(20, bMax);
+    bMax = Math.max(2, bMax);
 
     if (currentRect.lText === null) {
-      var newText = createText(currentRect.rect.bounds.topLeft, currentRect.rect.bounds.topRight, 2, 20);
+      var newText = createText(topLeft, topRight, 1, lMax);
       currentRect.lText = newText.text;
       currentRect.lOff = newText.offset;
     }
     currentRect.lText.remove();
-    var nText = createText(currentRect.rect.bounds.topLeft, currentRect.rect.bounds.topRight, 2, 20);
+    var nText = createText(topLeft, topRight, 1, lMax);
     currentRect.lText = nText.text;
     currentRect.lOff = nText.offset;
 
     if (currentRect.bText === null) {
-      var newRText = createText(currentRect.rect.bounds.topRight, currentRect.rect.bounds.bottomRight, 2, 20);
+      var newRText = createText(topRight, bottomRight, 1, bMax);
       currentRect.bText = newRText.text;
       currentRect.bOff = newRText.offset;
     }
     currentRect.bText.remove();
-    var nRText = createText(currentRect.rect.bounds.topRight, currentRect.rect.bounds.bottomRight, 2, 20);
+    var nRText = createText(topRight, bottomRight, 1, bMax);
     currentRect.bText = nRText.text;
     currentRect.bOff = nRText.offset;
 
@@ -953,6 +986,7 @@ $(document).ready(function () {
         hover: false
       };
       lastOverlay = obj;
+      console.log("Bottom right position: ", obj.rect.bounds.bottomRight);
       obj.lText.visible = false;
       obj.bText.visible = false;
       currentRect.rect.remove();
@@ -997,7 +1031,8 @@ $(document).ready(function () {
     var offset = 100.0 / z;
     offset = Math.min(100.0, offset);
     offset = Math.max(20.0, offset);
-    var off = new Point(offset * xOff, offset * yOff);
+    var textRot = rot * (Math.PI / 180.0);
+    var off = new Point( Math.abs(Math.sin(textRot))*offset * xOff, Math.abs(Math.cos(textRot)) *offset * yOff);
 
     var text = new PointText(midPoint(start, end).add(off));
     text.justification = 'center';
@@ -1036,7 +1071,7 @@ $(document).ready(function () {
       }
     }
     val = val.toFixed(2);
-    return val.toString()+unit;
+    return val.toString() + unit;
   }
 
   function midPoint(a, b) {
