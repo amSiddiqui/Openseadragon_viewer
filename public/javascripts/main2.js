@@ -13,6 +13,11 @@ $(document).ready(function () {
   OpenSeadragon.setString('Tool.rotate', 'Rotate');
   OpenSeadragon.setString('Tool.close', 'Close');
 
+  // Set viewer height
+  var navbarHeight = $(".navbar").height();
+  var pageHeight = $("#page").height();
+  $("#openseadragon-viewer").height(pageHeight - navbarHeight);
+
   // Image Initialization
   var image = {
     Image: {
@@ -39,7 +44,6 @@ $(document).ready(function () {
   var bm_goto;
   var overlay_index = 0; // Stores the current overlay index
   var overlays = []; // Stores all the overlays created
-  var rotation_enabled = false; // Stores whether the rotation slider is visible
   var rotator; // Stores the Rotation slider data
   var annotation_border_picker; // Stores the Overlay Border color data
   var default_border_color = "red";
@@ -49,12 +53,14 @@ $(document).ready(function () {
   var editMode = false;
   var currentEditingOverlay = null;
   var paperOverlay;
+  var homeZoom;
+  var viewerOpen = false;
 
 
 
   /*
   0 - Drawing Mode off
-  1 - Pen Mode
+  1 - Line Mode
   2 - Rect Mode
   3 - Circle Mode
   */
@@ -80,7 +86,7 @@ $(document).ready(function () {
     constrainDuringPan: false,
     maxZoomPixelRatio: 2,
     minPixelRatio: 0.5,
-    minZoomLevel: 0.653,
+    //   minZoomLevel: 0.653,
     visibilityRatio: 1,
     zoomPerScroll: 2,
     crossOriginPolicy: "Anonymous",
@@ -103,6 +109,13 @@ $(document).ready(function () {
       1 / (2 * viewer.source.aspectRatio));
     viewer.viewport.zoomTo(2, center, true);
     viewer_is_new = true;
+
+    setTimeout(function () {
+      $("#home-btn").addClass("is-info");
+      homeZoom = viewer.viewport.getZoom();
+      viewer.viewport.minZoomLevel = homeZoom;
+      viewerOpen = true;
+    }, 500);
 
     viewer.drawer.viewer = viewer;
   });
@@ -134,7 +147,61 @@ $(document).ready(function () {
 
 
   viewer.addHandler("zoom", function (event) {
+    if (!viewerOpen) return;
     var z = event.zoom;
+    if (homeZoom !== undefined) {
+      if (z.toFixed(2) == homeZoom.toFixed(2) && viewer.viewport.getRotation() == 0) {
+        $("#home-btn").addClass("is-info");
+        $("#btn-rotate-preset-1").removeClass("is-info");
+      } else {
+        $("#home-btn").removeClass("is-info");
+      }
+    }
+
+    $(".zoom-button").get().forEach(function (btn) {
+      switch (parseInt(btn.value)) {
+        case 2:
+          if (z == 2) {
+            $(btn).addClass("orange-button");
+          } else {
+            $(btn).removeClass("orange-button");
+          }
+          break;
+
+        case 5:
+          if (z == 5) {
+            $(btn).addClass("red-button");
+          } else {
+            $(btn).removeClass("red-button");
+          }
+          break;
+
+        case 10:
+          if (z == 10) {
+            $(btn).addClass("yellow-button");
+          } else {
+            $(btn).removeClass("yellow-button");
+          }
+          break;
+
+        case 20:
+          if (z == 20) {
+            $(btn).addClass("green-button");
+          } else {
+            $(btn).removeClass("green-button");
+          }
+          break;
+
+        case 40:
+          if (z == 40) {
+            $(btn).addClass("blue-button");
+          } else {
+            $(btn).removeClass("blue-button");
+          }
+          break;
+      }
+    });
+
     var scaling = 20.0 / z;
     scaling = Math.max(2, scaling);
     scaling = Math.min(20, scaling);
@@ -149,7 +216,6 @@ $(document).ready(function () {
       var off = new Point(Math.abs(Math.sin(textRot)) * offset * line.offset.x, Math.abs(Math.cos(textRot)) * offset * line.offset.y);
       line.text.position = mid.add(off);
     });
-
 
     rects.forEach(function (rect) {
       var topLeft = rect.rect.bounds.topLeft;
@@ -194,6 +260,37 @@ $(document).ready(function () {
 
   });
 
+  viewer.addHandler("rotate", function (event) {
+    if (!viewerOpen) return;
+    $("#btn-rotate-preset-1").removeClass("is-info");
+    $("#btn-rotate-preset-2").removeClass("is-info");
+    $("#btn-rotate-preset-3").removeClass("is-info");
+
+    switch (event.degrees) {
+      case 0:
+        $("#btn-rotate-preset-1").addClass("is-info");
+        break;
+      case 90:
+        $("#btn-rotate-preset-2").addClass("is-info");
+        break;
+      case 180:
+        $("#btn-rotate-preset-3").addClass("is-info");
+        break;
+    }
+
+    if (homeZoom !== undefined) {
+      if (viewer.viewport.getZoom().toFixed(2) == homeZoom.toFixed(2) && event.degrees == 0) {
+        $("#home-btn").addClass("is-info");
+        $("#btn-rotate-preset-1").removeClass("is-info");
+      } else {
+        $("#home-btn").removeClass("is-info");
+      }
+    }
+
+
+  });
+
+
   // Openseadragon Plugin initialization
 
   // Scalebar plugin
@@ -201,7 +298,7 @@ $(document).ready(function () {
     type: OpenSeadragon.ScalebarType.MICROSCOPY,
     pixelsPerMeter: ppm,
     minWidth: "160px",
-    location: OpenSeadragon.ScalebarLocation.TOP_RIGHT,
+    location: OpenSeadragon.ScalebarLocation.BOTTOM_RIGHT,
     // xOffset: 40,
     yOffset: 20,
     stayInsideImage: false,
@@ -213,6 +310,7 @@ $(document).ready(function () {
   });
 
 
+
   // Paperjs overlay
   paperOverlay = viewer.paperjsOverlay();
 
@@ -220,10 +318,12 @@ $(document).ready(function () {
 
   // Rotation slider
   $("#rotation-selector").roundSlider({
-    radius: 60,
+    radius: 45,
+    width: 8,
+    handleSize: "+8",
+    handleShape: "dot",
     sliderType: "min-range",
     value: 50,
-    svgMode: true,
     tooltipFormat: tooltipInDegrees,
     change: updateRotationSlider,
     drag: updateRotationSlider,
@@ -244,11 +344,15 @@ $(document).ready(function () {
 
   // Fix tooltip not in center
   setTimeout(function () {
+    fixRotatorTooltip();
+  }, 500);
+
+  function fixRotatorTooltip() {
     $(".rs-tooltip").css({
       "margin-top": "-15.5px",
       "margin-left": "-16.652px"
     });
-  }, 1000);
+  }
 
   // Color picker initialization
   // Overlay Border
@@ -419,11 +523,7 @@ $(document).ready(function () {
     } else {
       shape = overlay.circle;
     }
-    var topLeft = view.projectToView(view.bounds.topLeft);
-      var bottomRight = view.projectToView(view.bounds.bottomRight);
-      console.log(topLeft);
-      console.log(bottomRight);
-
+    
     shape.onMouseEnter = function (e) {
       if (overlay.type == 'c') {
         overlay.scale.text.visible = true;
@@ -437,19 +537,19 @@ $(document).ready(function () {
       e = e.event;
       var posX = 0;
       var posY = 0;
-      
+
       if (overlay.type == 'r') {
         var point = view.projectToView(overlay.rect.bounds.bottomRight);
         posX = point.x;
         posY = point.y;
         console.log("Position of Rect Screen: ", posX, ", ", posY);
-      } 
-      else if (overlay.type == 'c') {
-        var center = view.projectToView(overlay.circle.position.add(new Point(0, overlay.circle.radius)));
+      } else if (overlay.type == 'c') {
+        var center = view.projectToView(overlay.circle.position);
         posX = center.x;
         posY = center.y;
         console.log("Position of Circle Screen: ", posX, ", ", posY);
       }
+      console.log("(", posX, ", ", posY, ")");
       tooltip.css({
         top: posX,
         left: posY,
@@ -478,6 +578,7 @@ $(document).ready(function () {
     };
 
   }
+  
 
   function createCard(message, hovering) {
     var card = document.createElement('div');
@@ -533,7 +634,7 @@ $(document).ready(function () {
 
     $(card).hover(function () {}, function () {
       if (!hovering)
-      $(card).hide();
+        $(card).hide();
     });
 
     return {
@@ -581,14 +682,12 @@ $(document).ready(function () {
   });
 
   // Zoom Preset Buttons
-  $(".btn-round-red").click(function (e) {
-    resetZoomButtons();
-    $(this).addClass("btn-active");
-    zoomVal = parseInt($(this).val());
-    viewer.viewport.zoomTo(zoomVal);
+  $(".zoom-button").click(function (e) {
+    viewer.viewport.zoomTo(parseInt(e.target.value));
   });
 
   $("#screenshot-btn").click(function () {
+    $(this).addClass("is-success");
     $("#loading-modal").addClass("is-active");
     var parent = $('.openseadragon-container').get(0);
     var toBeHidden = $(parent).children().get(2);
@@ -597,32 +696,66 @@ $(document).ready(function () {
       Canvas2Image.saveAsPNG(canvas);
       $("#loading-modal").removeClass("is-active");
       $(toBeHidden).show();
+      $("#screenshot-btn").removeClass("is-success");
     });
   });
 
 
-  $("#rotation-btn").click(function (event) {
-    if (rotation_enabled) {
-      $("#rotation-menu").removeClass("is-active");
-    } else {
-      $("#rotation-menu").addClass("is-active");
-    }
-    rotation_enabled = !rotation_enabled;
-  });
-
   $("#btn-rotate-preset-1").click(function () {
     rotator.setValue(0);
     updateRotation(0);
+    fixRotatorTooltip();
   });
 
   $("#btn-rotate-preset-2").click(function () {
     rotator.setValue(90);
     updateRotation(90);
+    fixRotatorTooltip();
   });
 
   $("#btn-rotate-preset-3").click(function () {
     rotator.setValue(180);
     updateRotation(180);
+    fixRotatorTooltip();
+  });
+
+  $("#rotation-selector-dropdown").hover(function () {
+    $(this).addClass("is-active");
+    $("#rotation-dropdown-button").addClass("is-info");
+  }, function () {
+    $(this).removeClass("is-active");
+    $("#rotation-dropdown-button").removeClass("is-info");
+  });
+
+  $("#draw-menu-dropdown").hover(function () {
+    $(this).addClass("is-active");
+    $("#draw-button").addClass("is-danger");
+  }, function () {
+    $(this).removeClass("is-active");
+    if (drawMode === 0) {
+      $("#draw-button").removeClass("is-danger");
+    }
+  });
+
+  $("#line-button").click(function() {
+    if (drawMode !== 1)
+      changeDrawMode(1);
+    else
+      changeDrawMode(0);
+  }); 
+
+  $("#rect-button").click(function () {
+    if (drawMode !== 2)
+      changeDrawMode(2);
+    else
+      changeDrawMode(0);
+  });
+
+  $("#circle-button").click(function() {
+    if (drawMode !== 3)
+      changeDrawMode(3);
+    else
+      changeDrawMode(0);
   });
 
   // Modal Control Events (Modal for annotation input)
@@ -669,60 +802,17 @@ $(document).ready(function () {
   });
 
 
-  // Document Click Events
-  $(document).click(function (event) {
-    var id = event.target.id;
-    if ($(event.target).closest("#rotation-btn").length == 0 && $(event.target).closest("#rotation-menu").length == 0) {
-      $("#rotation-menu").removeClass("is-active");
-      rotation_enabled = false;
-    }
-  });
-
   // Resize event
   window.onresize = function () {
     paperOverlay.resize();
     paperOverlay.resizecanvas();
+    var navbarHeight = $(".navbar").height();
+    var pageHeight = $("#page").height();
+    $("#openseadragon-viewer").height(pageHeight - navbarHeight);
   };
 
 
   // Paperjs Drawing tool
-  // Install paperjs
-  
-  $("#pen-btn").click(function () {
-    $("canvas").addClass('cursor-crosshair');
-    if (drawMode !== 1) {
-      drawMode = 1;
-      viewer.setMouseNavEnabled(false);
-    } else {
-      drawMode = 0;
-      closeAnnotation();
-      viewer.setMouseNavEnabled(true);
-    }
-  });
-
-  $("#rect-btn").click(function () {
-    $("canvas").addClass('cursor-crosshair');
-    if (drawMode !== 2) {
-      drawMode = 2;
-      viewer.setMouseNavEnabled(false);
-    } else {
-      drawMode = 0;
-      viewer.setMouseNavEnabled(true);
-      closeAnnotation();
-    }
-  });
-
-  $("#circle-btn").click(function () {
-    $("canvas").addClass('cursor-crosshair');
-    if (drawMode !== 3) {
-      drawMode = 3;
-      viewer.setMouseNavEnabled(false);
-    } else {
-      drawMode = 0;
-      viewer.setMouseNavEnabled(true);
-      closeAnnotation();
-    }
-  });
 
   // Openseadragon Mouse events
   var mouseTracker = new OpenSeadragon.MouseTracker({
@@ -733,6 +823,7 @@ $(document).ready(function () {
     scrollHandler: resetZoomButtons,
   });
   mouseTracker.setTracking(true);
+
 
 
   function pressHandler(event) {
@@ -788,9 +879,7 @@ $(document).ready(function () {
     }
 
     startPoint = null;
-    drawMode = 0;
-    viewer.setMouseNavEnabled(true);
-    closeAnnotation();
+    changeDrawMode(0);
   }
 
 
@@ -1080,5 +1169,27 @@ $(document).ready(function () {
     return vec.getAngle(new Point(1, 0));
   }
 
-
+  function changeDrawMode(mode) {
+    $("#draw-button").removeClass("is-danger");
+    $("#line-button").removeClass("is-success");
+    $("#rect-button").removeClass("is-success");
+    $("#circle-button").removeClass("is-success");
+    drawMode = mode;
+    if (mode === 0) {
+      viewer.setMouseNavEnabled(true);
+      $("canvas").removeClass('cursor-crosshair');
+    } else {
+      viewer.setMouseNavEnabled(false);
+      $("#draw-button").addClass("is-danger");
+      $("canvas").addClass('cursor-crosshair');
+      if (mode === 1) {
+        $("#line-button").addClass("is-success");
+      }
+      else if (mode === 2) {
+        $("#rect-button").addClass("is-success");
+      }else if (mode === 3) {
+        $("#circle-button").addClass("is-success");
+      }
+    }
+  }
 });

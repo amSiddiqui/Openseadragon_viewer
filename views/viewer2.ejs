@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Viewer</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+    <link rel="stylesheet" href="/stylesheets/roundslider.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css" />
+    <link rel="stylesheet" href="/stylesheets/main2.css">
+
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+
+
+    <script src="/javascripts/openseadragon.min.js"></script>
+    <script src="/javascripts/openseadragon-scalebar.js"></script>
+
+
+    <script src="/javascripts/canvas-toBlob.js"></script>
+    <script src="/javascripts/FileSaver.js"></script>
+    <script defer src="/javascripts/fontawesome.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+    <script src="/javascripts/roundslider.min.js"></script>
+    <script src="/javascripts/html2canvas.min.js"></script>
+    <script src="/javascripts/canvas2image.js"></script>
+    <script src="/javascripts/paper-full.js"></script>
+    <script src="/javascripts/openseadragon-paperjs-overlay.js"></script>
+
+    <script src="/javascripts/main2.js"></script>
+
+</head>
+
+<body>
+    <div id="page">
+        <nav class="navbar" role="navigation" aria-label="main navigation">
+            <div id="navbarBasicExample" class="navbar-menu">
+                <div class="navbar-start">
+                    <div class="navbar-item">
+                        <button id="home-btn" class="button is-rounded"> <i class="fas fa-home"></i> </button>
+                    </div>
+                    
+                    <div class="separator"></div>
+
+                    <div class="navbar-item">
+                        <button id="zoomin-btn" class="button is-rounded"> <i class="fas fa-search-plus"></i> </button>
+                    </div>
+
+                    <div class="navbar-item">
+                        <button id="zoomout-btn" class="button is-rounded"> <i class="fas fa-search-minus"></i> </button>
+                    </div>
+
+                    <div class="separator"></div>
+
+                    <div class="navbar-item">
+                        <button value="2" class="button zoom-button" style="border: 2px solid #f68a42; border-top: none;"> 2x </button>
+                    </div>
+
+                    <div class="navbar-item">
+                        <button value="5" class="button zoom-button" style="border: 2px solid red; border-top: none;"> 5x </button>
+                    </div>
+
+                    <div class="navbar-item">
+                        <button value="10" class="button zoom-button" style="border: 2px solid hsl(48, 100%, 67%);; border-top: none;"> 10x </button>
+                    </div>
+                    
+                    <div class="navbar-item">
+                        <button value="20" class="button zoom-button" style="border: 2px solid green; border-top: none"> 20x </button>
+                    </div>
+                    
+                    <div class="navbar-item">
+                        <button value="40" class="button zoom-button" style="border: 2px solid blue; border-top: none"> 40x </button>
+                    </div>
+
+                    <div class="separator"></div>
+
+                    <div id="rotation-selector-dropdown" class="navbar-item has-dropdown">
+                        <button id="rotation-dropdown-button" class="button is-rounded"> <i class="fas fa-sync"></i> </button>
+                        <div class="navbar-dropdown">
+                            <div class="navbar-item">
+                                <div id="rotation-selector"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="btn-rotate-preset-1-container" class="navbar-item">
+                        <button id="btn-rotate-preset-1" value="0" class="button is-rounded"> 0&#176; </button>
+                    </div>
+
+                    <div class="navbar-item">
+                        <button id="btn-rotate-preset-2" value="90" class="button is-rounded"> 90&#176; </button>
+                    </div>
+
+                    <div class="navbar-item">
+                        <button id="btn-rotate-preset-3" value="180" class="button is-rounded"> 180&#176; </button>
+                    </div>
+
+                    <div class="separator"></div>
+
+                    <div class="navbar-item">
+                        <button id="screenshot-btn" class="button is-rounded"> <i class="fas fa-camera"></i> </button>
+                    </div>
+
+                    <div id="draw-menu-dropdown" class="navbar-item has-dropdown">
+                        <button id="draw-button" class="button is-rounded"> <i class="fas fa-pen"></i> </button>
+                        <div class="navbar-dropdown">
+                            <div class="navbar-item">
+                                <div id="draw-menu">
+                                    <div class="columns">
+                                        <div class="column">
+                                            <button id="rect-button" class="button is-rounded">
+                                                <svg width="15" height="15">
+                                                    <rect width="15" height="15" style = "stroke-width: 3; fill: rgb(255, 255, 255); stroke: rgb(0, 0, 0)"></rect>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="column">
+                                            <button id="circle-button" class="button is-rounded"> <i class="far fa-circle"></i> </button>
+                                        </div>
+                                        <div class="column">
+                                            <button id="line-button" class="button is-rounded">
+                                                <i class="fas fa-pencil-ruler"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="navbar-end">
+                    <div class="navbar-item">
+                        <button class="button is-rounded"> <i class="fas fa-cog"></i> </button>
+                    </div>
+                </div>
+
+            </div>
+        </nav>
+
+        
+        <div id="openseadragon-viewer">
+        </div>
+
+        <div class="modal" id="annotation-modal">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title" id="annotation-modal-title">Annotation Setting</p>
+                    <button class="delete annotation-modal-close" arai-label="close"></button>
+                </header>
+                <section class="modal-card-body">
+                    <div class="container">
+                        <label for="annotation-text" class="label">Annotation Text</label>
+                        <textarea name="annotation-text" id="annotation-text" cols="15" rows="5"
+                            class="textarea"></textarea>
+                    </div>
+                </section>
+                <footer class="modal-card-foot">
+                    <button class="button is-success" id="annotation-save-btn">Save</button>
+                    <button class="button annotation-modal-close">Cancel</button>
+                </footer>
+            </div>
+        </div>
+
+
+
+        <div id="loading-modal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <p class="image">
+                    <img style="width: 67px; height: 67px;" src="/images/loading.gif" alt="Loading...">
+                </p>
+            </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>
+
+        <div class="modal" id="delete-confirm">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="card">
+                    <div class="card-content">
+                        <p class="is-size-5">
+                            Delete Annotation?
+                        </p>
+                    </div>
+                    <footer class="card-footer">
+                        <p class="card-footer-item">
+                            <button id="delete-button" class="button is-danger">Delete</button>
+                        </p>
+                        <p class="card-footer-item">
+                            <button id="cancel-button" class="button">Cancel</button>
+                        </p>
+                    </footer>
+                </div>
+            </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>
+
+    </div>
+</body>
+
+</html>

@@ -10,6 +10,10 @@ router.get('/view', function (req, res, next) {
   res.render('viewer');
 });
 
+router.get('/view2', function (req, res, next) {
+  res.render('viewer2');
+});
+
 router.get('/geo', function (req, res, next) {
   res.render('geo');
 });
