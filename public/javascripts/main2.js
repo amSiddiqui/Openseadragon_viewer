@@ -63,6 +63,7 @@ $(document).ready(function () {
   var stroke_width = 4;
   var selectingColor = false;
   var prevZoom;
+  var viewZoom;
 
 
 
@@ -124,6 +125,8 @@ $(document).ready(function () {
       homeZoom = viewer.viewport.getZoom();
       viewer.viewport.minZoomLevel = homeZoom;
       viewerOpen = true;
+      stroke_width = stroke_width / paper.view.zoom;
+      viewZoom = paper.view.zoom;
       prevZoom = homeZoom;
     }, 500);
 
@@ -471,6 +474,7 @@ $(document).ready(function () {
 
   $("#stroke-width-input").on('change', function(event) {
     stroke_width = event.target.valueAsNumber;
+    stroke_width = stroke_width / viewZoom;
   });
 
 
