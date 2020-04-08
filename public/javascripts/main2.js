@@ -19,19 +19,21 @@ $(document).ready(function () {
   $("#openseadragon-viewer").height(pageHeight - navbarHeight);
 
   // Image Initialization
-  var image = {
-    Image: {
-      xmlns: "http://schemas.microsoft.com/deepzoom/2008",
-      Url: "//openseadragon.github.io/example-images/duomo/duomo_files/",
-      Format: "jpg",
-      Overlap: "2",
-      TileSize: "256",
-      Size: {
-        Width: "13920",
-        Height: "10200"
-      }
-    }
-  };
+  // var image = {
+  //   Image: {
+  //     xmlns: "http://schemas.microsoft.com/deepzoom/2008",
+  //     Url: "//openseadragon.github.io/example-images/duomo/duomo_files/",
+  //     Format: "jpg",
+  //     Overlap: "2",
+  //     TileSize: "256",
+  //     Size: {
+  //       Width: "13920",
+  //       Height: "10200"
+  //     }
+  //   }
+  // };
+
+  var image = "/slides/CMU-1-Small-Region.dzi";
 
   paper.install(window);
 
@@ -42,19 +44,21 @@ $(document).ready(function () {
   var bm_center;
   var bm_zoom;
   var bm_goto;
-  var overlay_index = 0; // Stores the current overlay index
-  var overlays = []; // Stores all the overlays created
   var rotator; // Stores the Rotation slider data
   var annotation_border_picker; // Stores the Overlay Border color data
   var default_border_color = "red";
-  var annotation_color_picker; // Stores the Overlay Background color data
-  var default_background_color = "#ffffff00";
+  var annotation_font_picker; // Stores the Overlay Background color data
+  var default_font_color = "black";
   var annotation_closed = false; // Stores whether the annotation was closed or not
   var editMode = false;
   var currentEditingOverlay = null;
   var paperOverlay;
   var homeZoom;
   var viewerOpen = false;
+  var font_color = default_font_color;
+  var stroke_color = default_border_color;
+  var stroke_width = 4;
+  var selectingColor = false;
 
 
 
@@ -90,10 +94,11 @@ $(document).ready(function () {
     visibilityRatio: 1,
     zoomPerScroll: 2,
     crossOriginPolicy: "Anonymous",
-
+    
     zoomInButton: "zoomin-btn",
     zoomOutButton: "zoomout-btn",
     homeButton: "home-btn",
+
   });
 
   viewer.open(image);
@@ -149,6 +154,7 @@ $(document).ready(function () {
   viewer.addHandler("zoom", function (event) {
     if (!viewerOpen) return;
     var z = event.zoom;
+
     if (homeZoom !== undefined) {
       if (z.toFixed(2) == homeZoom.toFixed(2) && viewer.viewport.getRotation() == 0) {
         $("#home-btn").addClass("is-info");
@@ -299,14 +305,13 @@ $(document).ready(function () {
     pixelsPerMeter: ppm,
     minWidth: "160px",
     location: OpenSeadragon.ScalebarLocation.BOTTOM_RIGHT,
-    // xOffset: 40,
-    yOffset: 20,
+    yOffset: 40,
     stayInsideImage: false,
     color: "blue",
     fontColor: "blue",
-    backgroundColor: "rgb(255, 255, 255, 0)",
-    fontSize: "small",
-    barThickness: 2
+    backgroundColor: "rgb(255, 255, 255, 0.8)",
+    fontSize: "large",
+    barThickness: 4
   });
 
 
@@ -356,94 +361,118 @@ $(document).ready(function () {
 
   // Color picker initialization
   // Overlay Border
-  // annotation_border_picker = Pickr.create({
-  //   el: '#annotation-border-picker',
-  //   theme: 'nano', // or 'monolith', or 'nano'
-  //   default: default_border_color,
+  annotation_border_picker = Pickr.create({
+    el: '#annotation-border-picker',
+    theme: 'nano', // or 'monolith', or 'nano'
+    default: default_border_color,
 
-  //   swatches: [
-  //     'red',
-  //     'yellow',
-  //     'green',
-  //     'black',
-  //     'orange',
-  //     'purple',
-  //     'gray'
-  //   ],
+    swatches: [
+      'red',
+      'yellow',
+      'green',
+      'black',
+      'orange',
+      'purple',
+      'gray'
+    ],
 
-  //   components: {
+    components: {
 
-  //     // Main components
-  //     preview: true,
-  //     opacity: false,
-  //     hue: true,
+      // Main components
+      preview: true,
+      opacity: false,
+      hue: true,
 
-  //     // Input / output Options
-  //     interaction: {
-  //       hex: false,
-  //       rgba: false,
-  //       hsla: false,
-  //       hsva: false,
-  //       cmyk: false,
-  //       input: false,
-  //       clear: true,
-  //       save: true
-  //     }
-  //   }
-  // });
+      // Input / output Options
+      interaction: {
+        hex: false,
+        rgba: false,
+        hsla: false,
+        hsva: false,
+        cmyk: false,
+        input: false,
+        clear: true,
+        save: true
+      }
+    }
+  });
 
-  // // Overlay Background
-  // annotation_color_picker = Pickr.create({
-  //   el: '#annotation-background-picker',
-  //   theme: 'nano', // or 'monolith', or 'nano'
-  //   default: default_background_color,
+  // Overlay Background
+  annotation_font_picker = Pickr.create({
+    el: '#annotation-font-picker',
+    theme: 'nano', // or 'monolith', or 'nano'
+    default: default_font_color,
 
-  //   swatches: [
-  //     'rgba(244, 67, 54, 1)',
-  //     'rgba(233, 30, 99, 0.95)',
-  //     'rgba(156, 39, 176, 0.9)',
-  //     'rgba(103, 58, 183, 0.85)',
-  //     'rgba(63, 81, 181, 0.8)',
-  //     'rgba(33, 150, 243, 0.75)',
-  //     'rgba(3, 169, 244, 0.7)',
-  //     'rgba(0, 188, 212, 0.7)',
-  //     'rgba(0, 150, 136, 0.75)',
-  //     'rgba(76, 175, 80, 0.8)',
-  //     'rgba(139, 195, 74, 0.85)',
-  //     'rgba(205, 220, 57, 0.9)',
-  //     'rgba(255, 235, 59, 0.95)',
-  //     'rgba(255, 193, 7, 1)'
-  //   ],
+    swatches: [
+      'red',
+      'yellow',
+      'green',
+      'black',
+      'orange',
+      'purple',
+      'gray'
+    ],
 
-  //   components: {
+    components: {
 
-  //     // Main components
-  //     preview: true,
-  //     opacity: true,
-  //     hue: true,
+      // Main components
+      preview: true,
+      hue: true,
 
-  //     // Input / output Options 
-  //     interaction: {
-  //       hex: false,
-  //       rgba: false,
-  //       hsla: false,
-  //       hsva: false,
-  //       cmyk: false,
-  //       input: false,
-  //       clear: true,
-  //       save: true
-  //     }
-  //   }
-  // });
+      // Input / output Options 
+      interaction: {
+        hex: false,
+        rgba: false,
+        hsla: false,
+        hsva: false,
+        cmyk: false,
+        input: false,
+        clear: true,
+        save: true
+      }
+    }
+  });
 
-  // // Color picker events
-  // annotation_color_picker.on('save', function (event) {
-  //   annotation_color_picker.hide();
-  // });
+  // Color picker events
+  annotation_font_picker.on('save', function (event) {
+    annotation_font_picker.hide();
+    console.log(annotation_font_picker.getColor().toHEXA().toString());
+    font_color = annotation_font_picker.getColor().toHEXA().toString();
+  });
 
-  // annotation_border_picker.on('save', function (event) {
-  //   annotation_border_picker.hide();
-  // });
+  annotation_border_picker.on('save', function (event) {
+    annotation_border_picker.hide();
+    console.log(annotation_border_picker.getColor().toHEXA().toString());
+    stroke_color = annotation_border_picker.getColor().toHEXA().toString();
+  });
+
+  annotation_font_picker.on('change', function (event) {
+    font_color = annotation_font_picker.getColor().toHEXA().toString();
+  });
+
+  annotation_border_picker.on('change', function (event) {
+    stroke_color = annotation_border_picker.getColor().toHEXA().toString();
+  });
+
+  annotation_font_picker.on('show', function (event) {
+    selectingColor = true;
+  });
+
+  annotation_border_picker.on('show', function (event) {
+    selectingColor = true;
+  });
+
+  annotation_font_picker.on('hide', function (event) {
+    selectingColor = false;
+  });
+
+  annotation_border_picker.on('hide', function (event) {
+    selectingColor = false;
+  });
+
+  $("#stroke-width-input").on('change', function(event) {
+    stroke_width = event.target.valueAsNumber;
+  });
 
 
   // Helper Functions
@@ -731,9 +760,11 @@ $(document).ready(function () {
     $(this).addClass("is-active");
     $("#draw-button").addClass("is-danger");
   }, function () {
-    $(this).removeClass("is-active");
-    if (drawMode === 0) {
-      $("#draw-button").removeClass("is-danger");
+    if (!selectingColor) {
+      $(this).removeClass("is-active");
+      if (drawMode === 0) {
+        $("#draw-button").removeClass("is-danger");
+      }
     }
   });
 
@@ -890,9 +921,9 @@ $(document).ready(function () {
       text: null,
       offset: null
     };
-    currentLine.line.strokeColor = 'red';
+    currentLine.line.strokeColor = stroke_color;
     currentLine.line.fillColor = currentLine.line.strokeColor;
-    currentLine.line.strokeWidth = 30;
+    currentLine.line.strokeWidth = stroke_width;
     currentLine.line.add(startPoint);
   }
 
@@ -934,9 +965,9 @@ $(document).ready(function () {
         offset: null
       }
     };
-    currentCircle.scale.line.strokeColor = '#222';
+    currentCircle.scale.line.strokeColor = stroke_color;
     currentCircle.scale.line.strokeCap = 'round';
-    currentCircle.scale.line.strokeWidth = 30;
+    currentCircle.scale.line.strokeWidth = stroke_width;
     currentCircle.scale.line.dashArray = [70, 70];
     currentCircle.scale.line.add(startPoint);
 
@@ -1086,17 +1117,17 @@ $(document).ready(function () {
 
   function createCircle(center, radius) {
     var c = new Shape.Circle(center, radius);
-    c.strokeColor = 'red';
+    c.strokeColor = stroke_color;
     c.fillColor = 'rgba(255, 255, 255, 0.05)';
-    c.strokeWidth = 30;
+    c.strokeWidth = stroke_width;
     return c;
   }
 
   function createRect(from, to) {
     var c = new Shape.Rectangle(from, to);
-    c.strokeColor = 'red';
+    c.strokeColor = stroke_color;
     c.fillColor = 'rgba(255, 255, 255, 0.05)';
-    c.strokeWidth = 30;
+    c.strokeWidth = stroke_width;
     return c;
   }
 
@@ -1119,7 +1150,7 @@ $(document).ready(function () {
 
     var text = new PointText(midPoint(start, end).add(off));
     text.justification = 'center';
-    text.fillColor = 'black';
+    text.fillColor = font_color;
     text.rotation = rot;
     text.fontFamily = 'sans serif';
 
