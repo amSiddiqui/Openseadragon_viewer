@@ -56,6 +56,12 @@
             self.resizecanvas();
         });
 
+        this._viewer.addHandler('rotate', function() {
+            self.resize();
+            self.resizecanvas();
+            self.rotate();
+        });
+
         this.resize();
     };
 
@@ -92,6 +98,9 @@
                 paper.view.zoom = image1.viewportToImageZoom(viewportZoom);
                 var center = this._viewer.viewport.viewportToImageCoordinates(this._viewer.viewport.getCenter(true));
                 paper.view.center = new paper.Point(center.x, center.y);
+       },
+       rotate: function() {
+                paper.view.rotation = this._viewer.viewport.getRotation();
        }
     };
 })();

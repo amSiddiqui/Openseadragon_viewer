@@ -19,23 +19,26 @@ $(document).ready(function () {
   $("#openseadragon-viewer").height(pageHeight - navbarHeight);
 
   // Image Initialization
-  // var image = {
-  //   Image: {
-  //     xmlns: "http://schemas.microsoft.com/deepzoom/2008",
-  //     Url: "//openseadragon.github.io/example-images/duomo/duomo_files/",
-  //     Format: "jpg",
-  //     Overlap: "2",
-  //     TileSize: "256",
-  //     Size: {
-  //       Width: "13920",
-  //       Height: "10200"
-  //     }
-  //   }
-  // };
+  var image1 = {
+    Image: {
+      xmlns: "http://schemas.microsoft.com/deepzoom/2008",
+      Url: "//openseadragon.github.io/example-images/duomo/duomo_files/",
+      Format: "jpg",
+      Overlap: "2",
+      TileSize: "256",
+      Size: {
+        Width: "13920",
+        Height: "10200"
+      }
+    }
+  };
 
-  var image = "/slides/CMU-1-Small-Region.dzi";
+  var image2 = "/slides/CMU-1-Small-Region.dzi";
+
+  var image = image2;
 
   paper.install(window);
+  
 
 
   // Variable declarations
@@ -59,6 +62,7 @@ $(document).ready(function () {
   var stroke_color = default_border_color;
   var stroke_width = 4;
   var selectingColor = false;
+  var prevZoom;
 
 
 
@@ -120,6 +124,7 @@ $(document).ready(function () {
       homeZoom = viewer.viewport.getZoom();
       viewer.viewport.minZoomLevel = homeZoom;
       viewerOpen = true;
+      prevZoom = homeZoom;
     }, 500);
 
     viewer.drawer.viewer = viewer;
@@ -152,6 +157,7 @@ $(document).ready(function () {
 
 
   viewer.addHandler("zoom", function (event) {
+    
     if (!viewerOpen) return;
     var z = event.zoom;
 
@@ -208,13 +214,11 @@ $(document).ready(function () {
       }
     });
 
-    var scaling = 20.0 / z;
-    scaling = Math.max(2, scaling);
-    scaling = Math.min(20, scaling);
-
-    var offset = 150.0 / z;
-    offset = Math.min(150.0, offset);
-    offset = Math.max(30.0, offset);
+    
+    var scaling = 1.0 / view.zoom;
+    var offset = 100.0 / view.zoom;
+    offset = Math.min(60.0, offset);
+    offset = Math.max(5.0, offset);
     lines.forEach(function (line) {
       var textRot = line.text.rotation * (Math.PI / 180.0);
       line.text.scaling = new Point(scaling, scaling);
@@ -230,8 +234,6 @@ $(document).ready(function () {
       var length = topLeft.getDistance(topRight);
       var breadth = topRight.getDistance(bottomRight);
       var lMax = length / 50.0;
-      lMax = Math.min(20, lMax);
-      lMax = Math.max(1, lMax);
 
       var bMax = breadth / 50.0;
       bMax = Math.min(20, bMax);
@@ -263,7 +265,7 @@ $(document).ready(function () {
       var off = new Point(Math.abs(Math.sin(textRot)) * offset * circle.scale.offset.x, Math.abs(Math.cos(textRot)) * offset * circle.scale.offset.y);
       circle.scale.text.position = mid.add(off);
     });
-
+    prevZoom = z;
   });
 
   viewer.addHandler("rotate", function (event) {
@@ -292,7 +294,6 @@ $(document).ready(function () {
         $("#home-btn").removeClass("is-info");
       }
     }
-
 
   });
 
@@ -436,13 +437,11 @@ $(document).ready(function () {
   // Color picker events
   annotation_font_picker.on('save', function (event) {
     annotation_font_picker.hide();
-    console.log(annotation_font_picker.getColor().toHEXA().toString());
     font_color = annotation_font_picker.getColor().toHEXA().toString();
   });
 
   annotation_border_picker.on('save', function (event) {
     annotation_border_picker.hide();
-    console.log(annotation_border_picker.getColor().toHEXA().toString());
     stroke_color = annotation_border_picker.getColor().toHEXA().toString();
   });
 
@@ -499,7 +498,6 @@ $(document).ready(function () {
     });
     $(confirmationModal).attr('id', '');
     $("#page").append(confirmationModal);
-
     $(deleteButton).click(function () {
       $(confirmationModal).addClass('is-active');
     });
@@ -571,14 +569,11 @@ $(document).ready(function () {
         var point = view.projectToView(overlay.rect.bounds.bottomRight);
         posX = point.x;
         posY = point.y;
-        console.log("Position of Rect Screen: ", posX, ", ", posY);
       } else if (overlay.type == 'c') {
         var center = view.projectToView(overlay.circle.position);
         posX = center.x;
         posY = center.y;
-        console.log("Position of Circle Screen: ", posX, ", ", posY);
       }
-      console.log("(", posX, ", ", posY, ")");
       tooltip.css({
         top: posX,
         left: posY,
@@ -695,7 +690,6 @@ $(document).ready(function () {
     } else if (text.length != 0 && currentEditingOverlay.annotation.length !== 0) {
       $(currentEditingOverlay.tooltip).find(".card-content").children('p').html(text);
     }
-
   }
 
   // Event Handlers
@@ -930,12 +924,12 @@ $(document).ready(function () {
   function lineDragHandler(current) {
     var firstSeg = currentLine.line.firstSegment;
     if (currentLine.text === null) {
-      var newText = createText(firstSeg.point, current, 2, 20);
+      var newText = createText(firstSeg.point, current, 20 * view.zoom, 200 * view.zoom);
       currentLine.text = newText.text;
       currentLine.offset = newText.offset;
     }
     currentLine.text.remove();
-    var nText = createText(firstSeg.point, current, 2, 20);
+    var nText = createText(firstSeg.point, current, 20 * view.zoom, 200 * view.zoom);
     currentLine.text = nText.text;
     currentLine.offset = nText.offset;
     currentLine.line.removeSegments();
@@ -965,10 +959,9 @@ $(document).ready(function () {
         offset: null
       }
     };
-    currentCircle.scale.line.strokeColor = stroke_color;
-    currentCircle.scale.line.strokeCap = 'round';
+    currentCircle.scale.line.strokeColor = font_color;
     currentCircle.scale.line.strokeWidth = stroke_width;
-    currentCircle.scale.line.dashArray = [70, 70];
+    currentCircle.scale.line.dashArray = [10, 10];
     currentCircle.scale.line.add(startPoint);
 
   }
@@ -1134,7 +1127,7 @@ $(document).ready(function () {
   function createText(start, end, sl, su) {
     var yOff = -1;
     var xOff = 1;
-    var z = viewer.viewport.getZoom();
+    var z = view.zoom;
     var rot = angleFromHorizontal(start, end);
     // If in first or third quadrand
     if ((end.x > start.x && end.y < start.y) || (end.x < start.x && end.y > start.y)) {
@@ -1143,8 +1136,8 @@ $(document).ready(function () {
     }
 
     var offset = 100.0 / z;
-    offset = Math.min(100.0, offset);
-    offset = Math.max(20.0, offset);
+    offset = Math.min(30.0, offset);
+    offset = Math.max(5.0, offset);
     var textRot = rot * (Math.PI / 180.0);
     var off = new Point(Math.abs(Math.sin(textRot)) * offset * xOff, Math.abs(Math.cos(textRot)) * offset * yOff);
 
@@ -1152,11 +1145,12 @@ $(document).ready(function () {
     text.justification = 'center';
     text.fillColor = font_color;
     text.rotation = rot;
+    console.log();
     text.fontFamily = 'sans serif';
 
-    var scaling = 20.0 / z;
-    scaling = Math.max(sl, scaling);
-    scaling = Math.min(su, scaling);
+    var scaling = 1.0/z;
+    // scaling = Math.max(sl, scaling);
+    // scaling = Math.min(su, scaling);
     text.scaling = new Point(scaling, scaling);
     text.fontWeight = 600;
 
@@ -1223,4 +1217,6 @@ $(document).ready(function () {
       }
     }
   }
+
+  
 });
