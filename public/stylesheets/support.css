@@ -20,7 +20,9 @@
 }
 
 .card {
-    width: 300px;
+    width: 200px;
+    position: absolute;
+    top: 601px;
 }
 
 .card-footer-item {

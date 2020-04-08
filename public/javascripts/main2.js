@@ -556,6 +556,7 @@ $(document).ready(function () {
     }
     
     shape.onMouseEnter = function (e) {
+      overlay.hover = true;
       if (overlay.type == 'c') {
         overlay.scale.text.visible = true;
         overlay.scale.line.visible = true;
@@ -563,24 +564,24 @@ $(document).ready(function () {
         overlay.bText.visible = true;
         overlay.lText.visible = true;
       }
-      overlay.hover = true;
 
       e = e.event;
       var posX = 0;
       var posY = 0;
 
       if (overlay.type == 'r') {
-        var point = view.projectToView(overlay.rect.bounds.bottomRight);
-        posX = point.x;
-        posY = point.y;
+        var point = view.projectToView(overlay.rect.bounds.bottomRight.add(new Point(0, overlay.rect.strokeWidth / 2.0)));
+        posX = point.x  - (tooltip.width() / 2);
+        posY = point.y + $(".navbar").height();
+        console.log(point);
       } else if (overlay.type == 'c') {
-        var center = view.projectToView(overlay.circle.position);
+        var center = view.projectToView(overlay.circle.bounds.bottomLeft);
         posX = center.x;
         posY = center.y;
       }
       tooltip.css({
-        top: posX,
-        left: posY,
+        top: posY,
+        left: posX,
         position: 'absolute'
       });
       if (!annotation_closed) {
@@ -589,9 +590,8 @@ $(document).ready(function () {
     };
 
     shape.onMouseLeave = function (e) {
-      if (!tooltip.is(":hover")) {
+      if (!tooltip.is(':hover'))
         tooltip.hide();
-      }
 
       if (overlay.type == 'c') {
         overlay.scale.text.visible = false;
@@ -660,7 +660,9 @@ $(document).ready(function () {
       annotation_closed = true;
     });
 
-    $(card).hover(function () {}, function () {
+    $(card).hover(function () {
+      $(card).show();
+    }, function () {
       if (!hovering)
         $(card).hide();
     });
@@ -1222,5 +1224,9 @@ $(document).ready(function () {
     }
   }
 
+
+  $("#page").click(function(event) {
+    console.log(event);
+  });
   
 });
