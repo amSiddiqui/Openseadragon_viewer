@@ -524,14 +524,21 @@ $(document).ready(function () {
           circles[i].id = i;
         }
       }
-
-      if (overlay.type == 'r') {
+      else if (overlay.type == 'r') {
         overlay.rect.remove();
         overlay.lText.remove();
         overlay.bText.remove();
         rects.splice(overlay.id, 1);
         for (var j = 0; j < rects.length; j++) {
           rects[j].id = j;
+        }
+      }
+      else if (overlay.type == 'l') {
+        overlay.line.remove();
+        overlay.text.remove();
+        lines.splice(overlay.id);
+        for (var k = 0; k < rects.length; k++) {
+          lines[k].id = k;
         }
       }
 
@@ -551,8 +558,10 @@ $(document).ready(function () {
     var shape;
     if (overlay.type == 'r') {
       shape = overlay.rect;
-    } else {
+    } else if (overlay.type == 'c'){
       shape = overlay.circle;
+    } else if (overlay.type == 'l') {
+      shape = overlay.line;
     }
     
     shape.onMouseEnter = function (e) {
@@ -560,14 +569,14 @@ $(document).ready(function () {
       if (overlay.type == 'c') {
         overlay.scale.text.visible = true;
         overlay.scale.line.visible = true;
-      } else {
+      } else if (overlay.type == 'r'){
         overlay.bText.visible = true;
         overlay.lText.visible = true;
       }
 
-      e = e.event;
       var posX = 0;
       var posY = 0;
+
 
       if (overlay.type == 'r') {
         var point = view.projectToView(overlay.rect.strokeBounds.bottomRight);
@@ -577,6 +586,10 @@ $(document).ready(function () {
         var center = view.projectToView(overlay.circle.position.add(new Point(0, overlay.circle.radius)));
         posX = center.x;
         posY = center.y;
+      } else if (overlay.type == 'l') {
+        var mouseP = view.projectToView(e.point);
+        posX = mouseP.x;
+        posY = mouseP.y;
       }
       tooltip.css({
         top: posY,
@@ -596,7 +609,7 @@ $(document).ready(function () {
       if (overlay.type == 'c') {
         overlay.scale.text.visible = false;
         overlay.scale.line.visible = false;
-      } else {
+      } else if (overlay.type == 'r') {
         overlay.bText.visible = false;
         overlay.lText.visible = false;
       }
@@ -819,6 +832,8 @@ $(document).ready(function () {
         rects.push(lastOverlay);
       } else if (lastOverlay.type == 'c') {
         circles.push(lastOverlay);
+      } else if (lastOverlay.type == 'l') {
+        lines.push(lastOverlay);
       }
       addOverlay(text, lastOverlay);
     }
@@ -917,9 +932,10 @@ $(document).ready(function () {
   // Helper function
   function linePressHandler() {
     currentLine = {
+      
       line: new Path(),
       text: null,
-      offset: null
+      offset: null,
     };
     currentLine.line.strokeColor = stroke_color;
     currentLine.line.fillColor = currentLine.line.strokeColor;
@@ -947,13 +963,18 @@ $(document).ready(function () {
       line: currentLine.line.clone(),
       text: currentLine.text.clone(),
       offset: currentLine.offset,
+      id: lines.length,
+      hover: false,
+      annotation: '',
+      type: 'l'
     };
-
-    lines.push(dup);
+    lastOverlay = dup;
 
     currentLine.line.remove();
     currentLine.text.remove();
     currentLine = null;
+    $("#annotation-modal").addClass('is-active');
+    $("#annotation-save-btn").val('l');
   }
 
   function circlePressHandler() {
