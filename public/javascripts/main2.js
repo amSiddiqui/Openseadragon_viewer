@@ -489,7 +489,7 @@ $(document).ready(function () {
 
   function addOverlay(text, overlay) {
     // Add Tooltip with text
-    var tooltip = createCard(text, overlay.hover);
+    var tooltip = createCard(text, overlay);
     var deleteButton = tooltip.delete;
     overlay.annotation = text;
     overlay.tooltip = tooltip.card;
@@ -570,12 +570,11 @@ $(document).ready(function () {
       var posY = 0;
 
       if (overlay.type == 'r') {
-        var point = view.projectToView(overlay.rect.bounds.bottomRight.add(new Point(0, overlay.rect.strokeWidth / 2.0)));
+        var point = view.projectToView(overlay.rect.strokeBounds.bottomRight);
         posX = point.x  - (tooltip.width() / 2);
         posY = point.y + $(".navbar").height();
-        console.log(point);
       } else if (overlay.type == 'c') {
-        var center = view.projectToView(overlay.circle.bounds.bottomLeft);
+        var center = view.projectToView(overlay.circle.position.add(new Point(0, overlay.circle.radius)));
         posX = center.x;
         posY = center.y;
       }
@@ -590,6 +589,7 @@ $(document).ready(function () {
     };
 
     shape.onMouseLeave = function (e) {
+      overlay.hover = false;
       if (!tooltip.is(':hover'))
         tooltip.hide();
 
@@ -600,7 +600,6 @@ $(document).ready(function () {
         overlay.bText.visible = false;
         overlay.lText.visible = false;
       }
-      overlay.hover = false;
 
       annotation_closed = false;
     };
@@ -608,7 +607,7 @@ $(document).ready(function () {
   }
   
 
-  function createCard(message, hovering) {
+  function createCard(message, overlay) {
     var card = document.createElement('div');
     $(card).addClass('card');
     var closeButton = document.createElement('a');
@@ -663,8 +662,9 @@ $(document).ready(function () {
     $(card).hover(function () {
       $(card).show();
     }, function () {
-      if (!hovering)
+      if (!overlay.hover) {
         $(card).hide();
+      }
     });
 
     return {
@@ -1151,7 +1151,6 @@ $(document).ready(function () {
     text.justification = 'center';
     text.fillColor = font_color;
     text.rotation = rot;
-    console.log();
     text.fontFamily = 'sans serif';
 
     var scaling = 1.0/z;
@@ -1225,8 +1224,4 @@ $(document).ready(function () {
   }
 
 
-  $("#page").click(function(event) {
-    console.log(event);
-  });
-  
 });
