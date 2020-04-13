@@ -14,6 +14,10 @@ router.get('/view2', function (req, res, next) {
   res.render('viewer2');
 });
 
+router.get('/view3', function (req, res, next) {
+  res.render('viewer3');
+});
+
 router.get('/geo', function (req, res, next) {
   res.render('geo');
 });

@@ -538,7 +538,7 @@ $(document).ready(function () {
         overlay.text.remove();
         lines.splice(overlay.id);
         for (var k = 0; k < rects.length; k++) {
-          lines[k].id = k;
+          lines[k].id = k; 
         }
       }
 
@@ -987,8 +987,8 @@ $(document).ready(function () {
       }
     };
     currentCircle.scale.line.strokeColor = font_color;
-    currentCircle.scale.line.strokeWidth = stroke_width;
-    currentCircle.scale.line.dashArray = [10, 10];
+    currentCircle.scale.line.strokeWidth = 10 * viewZoom;
+    // currentCircle.scale.line.dashArray = [40, 40];
     currentCircle.scale.line.add(startPoint);
 
   }
@@ -1015,15 +1015,6 @@ $(document).ready(function () {
     currentCircle.scale.text = nText.text;
     currentCircle.scale.offset = nText.offset;
 
-    var dashWidth = radius / 10.0;
-    dashWidth = Math.max(5, dashWidth);
-    dashWidth = Math.min(30, dashWidth);
-
-    var dashLen = radius / 7.0;
-    dashLen = Math.max(10, dashLen);
-    dashLen = Math.min(70, dashLen);
-    currentCircle.scale.line.strokeWidth = dashWidth;
-    currentCircle.scale.line.dashArray = [dashLen, dashLen];
 
   }
 
