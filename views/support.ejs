@@ -1,41 +1,30 @@
 <!DOCTYPE html>
 
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Hover Div</title>
-    <meta name="description" content="">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Hover Div</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js"
     integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-    <script src="/javascripts/fontawesome.min.js"></script>
-    <script src="/javascripts/support.js"></script>
-    
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
-    <link rel="stylesheet" href="/stylesheets/support.css">
+  <script src="/javascripts/fontawesome.min.js"></script>
+  <script src="/javascripts/support.js"></script>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+  <link rel="stylesheet" href="/stylesheets/support.css">
 </head>
 
 <body>
 
-    
-    <div class="card">
-        <a class="delete card-close"></a>
-        <div class="card-content">
-          <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Iusto, dolores.</p>
-        </div>
-        <footer class="card-footer">
-          <p class="card-footer-item">
-            <span>
-                <button class="button is-info is-small">Edit</button>
-            </span>
-          </p>
-          <p class="card-footer-item">
-            <span>
-              <button class="button is-danger is-small">Delete</button>
-            </span>
-          </p>
-        </footer>
-      </div>
-      
-</body> 
+
+  <div class="card">
+    <button id="delete-button" class="card-control"> <i class="fas fa-times"></i> </button>
+    <button id="edit-button" class="card-control"><i class="fas fa-edit"></i></button>
+    <div class="card-content">
+      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Rem beatae hic eaque! Molestias, dolorem error ex aliquid necessitatibus excepturi obcaecati!</p>
+    </div>
+  </div>
+</body>
+
 </html>

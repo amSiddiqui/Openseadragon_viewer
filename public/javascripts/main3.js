@@ -52,7 +52,6 @@ $(document).ready(function () {
     var default_border_color = "red";
     var annotation_font_picker; // Stores the Overlay Background color data
     var default_font_color = "black";
-    var annotation_closed = false; // Stores whether the annotation was closed or not
     var editMode = false;
     var currentEditingOverlay = null;
     var paperOverlay;
@@ -63,6 +62,7 @@ $(document).ready(function () {
     var selectingColor = false;
     var prevZoom;
     var viewZoom;
+    var rotating = false;
 
 
 
@@ -140,6 +140,15 @@ $(document).ready(function () {
             }, 5);
             viewer_is_new = false;
         }
+        lines.forEach(function (line) {
+            updateLineCardDivText(line.text, line.line.firstSegment.point, line.line.lastSegment.point);
+        });
+        rects.forEach(function(rect) {
+            updateRectCardDivText(rect.text, rect.rect.strokeBounds.topLeft, rect.rect.strokeBounds.topRight, rect.rect.strokeBounds.bottomRight);
+        });
+        circles.forEach(function(circle) {
+            updateCircleCardDivText(circle.text, circle.circle.position.add(new Point(0, circle.circle.radius + circle.circle.strokeWidth)), circle.circle.radius);
+        });
     });
 
     viewer.addHandler("home", function () {
@@ -154,6 +163,7 @@ $(document).ready(function () {
         rotator.setValue(0);
         updateRotation(0);
         resetZoomButtons();
+        fixRotatorTooltip();
     });
 
 
@@ -211,58 +221,6 @@ $(document).ready(function () {
                     }
                     break;
             }
-        });
-
-
-        var scaling = 1.0 / view.zoom;
-        var offset = 100.0 / view.zoom;
-        offset = Math.min(60.0, offset);
-        offset = Math.max(5.0, offset);
-        lines.forEach(function (line) {
-            var textRot = line.text.rotation * (Math.PI / 180.0);
-            line.text.scaling = new Point(scaling, scaling);
-            var mid = midPoint(line.line.firstSegment.point, line.line.lastSegment.point);
-            var off = new Point(Math.abs(Math.sin(textRot)) * offset * line.offset.x, Math.abs(Math.cos(textRot)) * offset * line.offset.y);
-            line.text.position = mid.add(off);
-        });
-
-        rects.forEach(function (rect) {
-            var topLeft = rect.rect.bounds.topLeft;
-            var topRight = rect.rect.bounds.topRight;
-            var bottomRight = rect.rect.bounds.bottomRight;
-            var length = topLeft.getDistance(topRight);
-            var breadth = topRight.getDistance(bottomRight);
-            var lMax = length / 50.0;
-
-            var bMax = breadth / 50.0;
-            bMax = Math.min(20, bMax);
-            bMax = Math.max(1, bMax);
-            var rScaling = Math.max(1, scaling);
-            rScaling = Math.min(lMax, rScaling);
-
-            rect.lText.scaling = new Point(rScaling, rScaling);
-            var mid = midPoint(rect.rect.bounds.topLeft, rect.rect.bounds.topRight);
-            var off = new Point(0, offset * rect.lOff.y);
-            rect.lText.position = mid.add(off);
-
-            rScaling = Math.max(1, scaling);
-            rScaling = Math.min(bMax, rScaling);
-
-            rect.bText.scaling = new Point(rScaling, rScaling);
-            mid = midPoint(rect.rect.bounds.topRight, rect.rect.bounds.bottomRight);
-            off = new Point(offset * rect.bOff.x, 0);
-            rect.bText.position = mid.add(off);
-        });
-
-        circles.forEach(function (circle) {
-            var maxScale = Math.min(20.0, circle.circle.radius / 50.0);
-            scaling = Math.min(maxScale, scaling);
-            scaling = Math.max(1, scaling);
-            circle.scale.text.scaling = new Point(scaling, scaling);
-            var mid = midPoint(circle.scale.line.firstSegment.point, circle.scale.line.lastSegment.point);
-            var textRot = circle.scale.text.rotation * (Math.PI / 180.0);
-            var off = new Point(Math.abs(Math.sin(textRot)) * offset * circle.scale.offset.x, Math.abs(Math.cos(textRot)) * offset * circle.scale.offset.y);
-            circle.scale.text.position = mid.add(off);
         });
         prevZoom = z;
     });
@@ -333,7 +291,15 @@ $(document).ready(function () {
         change: updateRotationSlider,
         drag: updateRotationSlider,
         min: 0,
-        max: 360
+        max: 360,
+        start: function() {rotating = true;},
+        stop: function() {
+            rotating = false;
+            if (!$("#rotation-selector-dropdown").is(":hover")) {
+                $("#rotation-selector-dropdown").removeClass("is-active");
+                $("#rotation-dropdown-button").removeClass("is-info");
+            }
+        }
     });
 
     // Event Handlers for Rotation Slider
@@ -485,12 +451,27 @@ $(document).ready(function () {
 
     function addOverlay(text, overlay) {
         // Add Tooltip with text
-        var tooltip = createCard(text, overlay);
-        var deleteButton = tooltip.delete;
         overlay.annotation = text;
-        overlay.tooltip = tooltip.card;
-
-        var editButton = tooltip.edit;
+        if (text.length !== 0) {
+            $(overlay.text).children(".card-content").children(".annotation-text").html(text);
+            var newWidth = 100;
+            if (text.length > 10) {
+                newWidth = 150;
+            }if (text.length > 20) {
+                newWidth = 200;
+            }
+            $(overlay.text).css("width", newWidth+"px");
+        }
+        if (overlay.type == 'l') {
+            updateLineCardDivText(overlay.text, overlay.line.firstSegment.point, overlay.line.lastSegment.point);
+        }
+        else if (overlay.type == 'r') {
+            updateRectCardDivText(overlay.text, overlay.rect.strokeBounds.topLeft, overlay.rect.strokeBounds.topRight, overlay.rect.strokeBounds.bottomRight);
+        }else if (overlay.type == 'c') {
+            updateCircleCardDivText(overlay.text, overlay.circle.position.add(new Point(0, overlay.circle.radius + overlay.circle.strokeWidth)), overlay.circle.radius);
+        }
+        var editButton = $(overlay.text).children(".edit-button").get(0);
+        var deleteButton = $(overlay.text).children(".delete-button").get(0);
         var confirmationModal = $("#delete-confirm").clone();
         $(confirmationModal).children(".modal-content").children(".card").css({
             "width": "300px",
@@ -510,26 +491,21 @@ $(document).ready(function () {
         $(confirmationModal).children().find("#delete-button").click(function () {
             $(confirmationModal).removeClass('is-active');
             $(confirmationModal).remove();
-            $(tooltip).remove();
+            $(overlay.text).remove();
             if (overlay.type == 'c') {
                 overlay.circle.remove();
-                overlay.scale.text.remove();
-                overlay.scale.line.remove();
                 circles.splice(overlay.id, 1);
                 for (var i = 0; i < circles.length; i++) {
                     circles[i].id = i;
                 }
             } else if (overlay.type == 'r') {
                 overlay.rect.remove();
-                overlay.lText.remove();
-                overlay.bText.remove();
                 rects.splice(overlay.id, 1);
                 for (var j = 0; j < rects.length; j++) {
                     rects[j].id = j;
                 }
             } else if (overlay.type == 'l') {
                 overlay.line.remove();
-                overlay.text.remove();
                 lines.splice(overlay.id);
                 for (var k = 0; k < rects.length; k++) {
                     lines[k].id = k;
@@ -547,138 +523,32 @@ $(document).ready(function () {
             currentEditingOverlay = overlay;
         });
 
-        $("#page").append(tooltip.card);
-        tooltip = $(tooltip.card);
-        var shape;
-        if (overlay.type == 'r') {
-            shape = overlay.rect;
-        } else if (overlay.type == 'c') {
-            shape = overlay.circle;
-        } else if (overlay.type == 'l') {
-            shape = overlay.line;
-        }
-
-        shape.onMouseEnter = function (e) {
-            overlay.hover = true;
-            if (overlay.type == 'c') {
-                overlay.scale.text.visible = true;
-                overlay.scale.line.visible = true;
-            } else if (overlay.type == 'r') {
-                overlay.bText.visible = true;
-                overlay.lText.visible = true;
+        $(overlay.text).hover(function() {
+            $(deleteButton).show();
+            $(editButton).show();
+            if (overlay.type == 'l') {
+                updateLineCardDivText(overlay.text, overlay.line.firstSegment.point, overlay.line.lastSegment.point);
             }
-
-            var posX = 0;
-            var posY = 0;
-
-
-            if (overlay.type == 'r') {
-                var point = view.projectToView(overlay.rect.strokeBounds.bottomRight);
-                posX = point.x - (tooltip.width() / 2);
-                posY = point.y + $(".navbar").height();
-            } else if (overlay.type == 'c') {
-                var center = view.projectToView(overlay.circle.position.add(new Point(0, overlay.circle.radius)));
-                posX = center.x;
-                posY = center.y;
-            } else if (overlay.type == 'l') {
-                var mouseP = view.projectToView(e.point);
-                posX = mouseP.x;
-                posY = mouseP.y;
+            else if (overlay.type == 'r') {
+                updateRectCardDivText(overlay.text, overlay.rect.strokeBounds.topLeft, overlay.rect.strokeBounds.topRight, overlay.rect.strokeBounds.bottomRight);
             }
-            tooltip.css({
-                top: posY,
-                left: posX,
-                position: 'absolute'
-            });
-            if (!annotation_closed) {
-                tooltip.show();
+            else if (overlay.type == 'c') {
+                updateCircleCardDivText(overlay.text, overlay.circle.position.add(new Point(0, overlay.circle.radius + overlay.circle.strokeWidth)), overlay.circle.radius);
             }
-        };
-
-        shape.onMouseLeave = function (e) {
-            overlay.hover = false;
-            if (!tooltip.is(':hover'))
-                tooltip.hide();
-
-            if (overlay.type == 'c') {
-                overlay.scale.text.visible = false;
-                overlay.scale.line.visible = false;
-            } else if (overlay.type == 'r') {
-                overlay.bText.visible = false;
-                overlay.lText.visible = false;
+        }, function() {
+            $(deleteButton).hide();
+            $(editButton).hide();
+            if (overlay.type == 'l') {
+                updateLineCardDivText(overlay.text, overlay.line.firstSegment.point, overlay.line.lastSegment.point);
             }
-
-            annotation_closed = false;
-        };
-
-    }
-
-
-    function createCard(message, overlay) {
-        var card = document.createElement('div');
-        $(card).addClass('card');
-        var closeButton = document.createElement('a');
-        $(closeButton).addClass('delete');
-        $(closeButton).addClass('card-close');
-        $(card).append(closeButton);
-
-        var width = message.length == 0 ? "180px" : "200px";
-        $(card).css("width", width);
-        if (message.length != 0) {
-            var cardContent = document.createElement('div');
-            $(cardContent).addClass('card-content');
-            var paragraph = document.createElement('p');
-            $(paragraph).append(message);
-            $(cardContent).append(paragraph);
-            $(card).append(cardContent);
-        }
-        var footer = document.createElement('footer');
-        $(footer).addClass('card-footer');
-
-        var cardItem = document.createElement('p');
-        $(cardItem).addClass('card-footer-item');
-        var span = document.createElement('span');
-        var editButton = document.createElement('button');
-        $(editButton).append('Edit');
-        $(editButton).addClass('button');
-        $(editButton).addClass('is-info');
-        $(editButton).addClass('is-small');
-        $(span).append(editButton);
-        $(cardItem).append(span);
-        $(footer).append(cardItem);
-
-        var cardItem2 = document.createElement('p');
-        $(cardItem2).addClass('card-footer-item');
-        var span2 = document.createElement('span');
-        var deleteButton = document.createElement('button');
-        $(deleteButton).append('Delete');
-        $(deleteButton).addClass('button');
-        $(deleteButton).addClass('is-danger');
-        $(deleteButton).addClass('is-small');
-        $(span2).append(deleteButton);
-        $(cardItem2).append(span2);
-        $(footer).append(cardItem2);
-
-        $(card).append(footer);
-
-        $(closeButton).click(function () {
-            $(card).hide();
-            annotation_closed = true;
-        });
-
-        $(card).hover(function () {
-            $(card).show();
-        }, function () {
-            if (!overlay.hover) {
-                $(card).hide();
+            else if (overlay.type == 'r') {
+                updateRectCardDivText(overlay.text, overlay.rect.strokeBounds.topLeft, overlay.rect.strokeBounds.topRight, overlay.rect.strokeBounds.bottomRight);
+            }
+            else if (overlay.type == 'c') {
+                updateCircleCardDivText(overlay.text, overlay.circle.position.add(new Point(0, overlay.circle.radius + overlay.circle.strokeWidth)), overlay.circle.radius);
             }
         });
 
-        return {
-            card: card,
-            delete: deleteButton,
-            edit: editButton
-        };
     }
 
     function closeAnnotation() {
@@ -691,17 +561,34 @@ $(document).ready(function () {
     }
 
     function updateAnnotation(text) {
-        if (text.length == 0 && currentEditingOverlay.annotation.length !== 0) {
-            currentEditingOverlay.tooltip.find(".card-content").remove();
-        } else if (text.length != 0 && currentEditingOverlay.annotation.length === 0) {
-            var cardContent = document.createElement('div');
-            $(cardContent).addClass('card-content');
-            var paragraph = document.createElement('p');
-            $(paragraph).append(text);
-            $(cardContent).append(paragraph);
-            $(currentEditingOverlay.tooltip).append(cardContent);
-        } else if (text.length != 0 && currentEditingOverlay.annotation.length !== 0) {
-            $(currentEditingOverlay.tooltip).find(".card-content").children('p').html(text);
+        currentEditingOverlay.annotation = text;
+        if (text.length !== 0) {
+            $(currentEditingOverlay.text).children(".card-content").children(".annotation-text").html(text);
+            var newWidth = 100;
+            if (text.length > 10) {
+                newWidth = 150;
+            }if (text.length > 20) {
+                newWidth = 200;
+            }
+            $(currentEditingOverlay.text).css("width", newWidth+"px");
+        }
+        else  {
+            var nWidth = 70;
+            if (currentEditingOverlay.type == 'r') {
+                nWidth = 150;
+            }else if (currentEditingOverlay.type == 'c') {
+                nWidth = 100;
+            }
+            $(currentEditingOverlay.text).css("width", nWidth+"px");
+        }
+        if (currentEditingOverlay.type == 'l') {
+            updateLineCardDivText(currentEditingOverlay.text, currentEditingOverlay.line.firstSegment.point, currentEditingOverlay.line.lastSegment.point);
+        }
+        else if (currentEditingOverlay.type == 'r') {
+            updateRectCardDivText(currentEditingOverlay.text, currentEditingOverlay.rect.strokeBounds.topLeft, currentEditingOverlay.rect.strokeBounds.topRight, currentEditingOverlay.rect.strokeBounds.bottomRight);
+        }
+        else if (currentEditingOverlay.type == 'c') {
+            updateCircleCardDivText(currentEditingOverlay.text, currentEditingOverlay.circle.position.add(new Point(0, radius + stroke_width)), currentEditingOverlay.circle.radius);
         }
     }
 
@@ -759,8 +646,10 @@ $(document).ready(function () {
         $(this).addClass("is-active");
         $("#rotation-dropdown-button").addClass("is-info");
     }, function () {
-        $(this).removeClass("is-active");
-        $("#rotation-dropdown-button").removeClass("is-info");
+        if (!rotating) {
+            $(this).removeClass("is-active");
+            $("#rotation-dropdown-button").removeClass("is-info");
+        }
     });
 
     $("#draw-menu-dropdown").hover(function () {
@@ -803,13 +692,12 @@ $(document).ready(function () {
         if (!editMode) {
             if (lastOverlay.type == 'r') {
                 lastOverlay.rect.remove();
-                lastOverlay.lText.remove();
-                lastOverlay.bText.remove();
             } else if (lastOverlay.type == 'c') {
                 lastOverlay.circle.remove();
-                lastOverlay.scale.text.remove();
-                lastOverlay.scale.line.remove();
+            } else if (lastOverlay.type == 'l') {
+                lastOverlay.line.remove();
             }
+            $(lastOverlay.text).remove();
         }
         editMode = false;
         resetAnnotationModal();
@@ -855,6 +743,15 @@ $(document).ready(function () {
             }
             viewer.viewport.minZoomLevel = viewer.viewport.getHomeZoom();
         }, 100);
+        lines.forEach(function (line) {
+            updateLineCardDivText(line.text, line.line.firstSegment.point, line.line.lastSegment.point);
+        });
+        rects.forEach(function(rect) {
+            updateRectCardDivText(rect.text, rect.rect.strokeBounds.topLeft, rect.rect.strokeBounds.topRight, rect.rect.strokeBounds.bottomRight);
+        });
+        circle.forEach(function(circle) {
+            updateCircleCardDivText(circle.text, circle.circle.position.add(new Point(0, radius + stroke_width)), circle.circle.radius);
+        });
     };
 
 
@@ -932,10 +829,8 @@ $(document).ready(function () {
     // Helper function
     function linePressHandler() {
         currentLine = {
-
             line: new Path(),
-            text: null,
-            offset: null,
+            text: createDivText(),
         };
         currentLine.line.strokeColor = stroke_color;
         currentLine.line.fillColor = currentLine.line.strokeColor;
@@ -944,25 +839,16 @@ $(document).ready(function () {
     }
 
     function lineDragHandler(current) {
-        var firstSeg = currentLine.line.firstSegment;
-        if (currentLine.text === null) {
-            var newText = createText(firstSeg.point, current, 20 * view.zoom, 200 * view.zoom);
-            currentLine.text = newText.text;
-            currentLine.offset = newText.offset;
-        }
-        currentLine.text.remove();
-        var nText = createText(firstSeg.point, current, 20 * view.zoom, 200 * view.zoom);
-        currentLine.text = nText.text;
-        currentLine.offset = nText.offset;
+        var firstSeg = currentLine.line.firstSegment;        
         currentLine.line.removeSegments();
         currentLine.line.add(firstSeg, current);
+        updateLineCardDivText(currentLine.text, current, firstSeg.point);
     }
 
     function lineDragEndHandler(current) {
         var dup = {
             line: currentLine.line.clone(),
-            text: currentLine.text.clone(),
-            offset: currentLine.offset,
+            text: currentLine.text,
             id: lines.length,
             hover: false,
             annotation: '',
@@ -971,7 +857,6 @@ $(document).ready(function () {
         lastOverlay = dup;
 
         currentLine.line.remove();
-        currentLine.text.remove();
         currentLine = null;
         $("#annotation-modal").addClass('is-active');
         $("#annotation-save-btn").val('l');
@@ -980,17 +865,10 @@ $(document).ready(function () {
     function circlePressHandler() {
         currentCircle = {
             circle: null,
-            scale: {
-                line: new Path(),
-                text: null,
-                offset: null
-            }
+            text: createDivText(),
         };
-        currentCircle.scale.line.strokeColor = font_color;
-        currentCircle.scale.line.strokeWidth = 10 * viewZoom;
-        // currentCircle.scale.line.dashArray = [40, 40];
-        currentCircle.scale.line.add(startPoint);
-
+        $(currentCircle.text).css("width", "90px");
+        $(currentCircle.text).children(".card-content").children(".measurement").css("font-size", "0.65rem");
     }
 
     function circleDragHandler(current) {
@@ -1000,48 +878,24 @@ $(document).ready(function () {
         currentCircle.circle.remove();
         currentCircle.circle = createCircle(startPoint, startPoint.getDistance(current));
 
-        var firstSeg = currentCircle.scale.line.firstSegment;
-        currentCircle.scale.line.removeSegments();
-        currentCircle.scale.line.add(firstSeg, current);
         var radius = currentCircle.circle.radius;
-        var maxScale = Math.min(20.0, radius / 50.0);
-        if (currentCircle.scale.text === null) {
-            var newText = createText(firstSeg.point, current, 1, maxScale);
-            currentCircle.scale.text = newText.text;
-            currentCircle.scale.offset = newText.offset;
-        }
-        currentCircle.scale.text.remove();
-        var nText = createText(firstSeg.point, current, 1, maxScale);
-        currentCircle.scale.text = nText.text;
-        currentCircle.scale.offset = nText.offset;
-
+        updateCircleCardDivText(currentCircle.text, currentCircle.circle.position.add(new Point(0, radius + stroke_width)), radius);
 
     }
 
     function circleDragEndHandler(current) {
         if (currentCircle !== null) {
             var c = createCircle(currentCircle.circle.position, currentCircle.circle.radius);
-            var s = {
-                line: currentCircle.scale.line.clone(),
-                text: currentCircle.scale.text.clone(),
-                offset: currentCircle.scale.offset.clone()
-            };
+            
             var obj = {
                 id: circles.length,
                 type: 'c',
                 circle: c,
-                scale: s,
-                hover: false
+                text: currentCircle.text
             };
 
             lastOverlay = obj;
-
-            s.line.visible = false;
-            s.text.visible = false;
-
             currentCircle.circle.remove();
-            currentCircle.scale.line.remove();
-            currentCircle.scale.text.remove();
             $("#annotation-modal").addClass('is-active');
             $("#annotation-save-btn").val('c');
         }
@@ -1050,11 +904,10 @@ $(document).ready(function () {
     function rectPressHandler() {
         currentRect = {
             rect: null,
-            lText: null,
-            lOff: null,
-            bText: null,
-            bOff: null
+            text: createDivText(),
         };
+        $(currentRect.text).css("width", "115px");
+        $(currentRect.text).children(".card-content").children(".measurement").css("font-size", "0.65rem");
     }
 
     function rectDragHandler(current) {
@@ -1063,39 +916,7 @@ $(document).ready(function () {
         }
         currentRect.rect.remove();
         currentRect.rect = createRect(startPoint, current);
-        var topLeft = currentRect.rect.bounds.topLeft;
-        var topRight = currentRect.rect.bounds.topRight;
-        var bottomRight = currentRect.rect.bounds.bottomRight;
-        var length = topLeft.getDistance(topRight);
-        var breadth = topRight.getDistance(bottomRight);
-        var lMax = length / 50.0;
-        lMax = Math.min(20, lMax);
-        lMax = Math.max(2, lMax);
-
-        var bMax = breadth / 50.0;
-        bMax = Math.min(20, bMax);
-        bMax = Math.max(2, bMax);
-
-        if (currentRect.lText === null) {
-            var newText = createText(topLeft, topRight, 1, lMax);
-            currentRect.lText = newText.text;
-            currentRect.lOff = newText.offset;
-        }
-        currentRect.lText.remove();
-        var nText = createText(topLeft, topRight, 1, lMax);
-        currentRect.lText = nText.text;
-        currentRect.lOff = nText.offset;
-
-        if (currentRect.bText === null) {
-            var newRText = createText(topRight, bottomRight, 1, bMax);
-            currentRect.bText = newRText.text;
-            currentRect.bOff = newRText.offset;
-        }
-        currentRect.bText.remove();
-        var nRText = createText(topRight, bottomRight, 1, bMax);
-        currentRect.bText = nRText.text;
-        currentRect.bOff = nRText.offset;
-
+        updateRectCardDivText(currentRect.text, currentRect.rect.strokeBounds.topLeft, currentRect.rect.strokeBounds.topRight, currentRect.rect.strokeBounds.bottomRight);
     }
 
     function rectDragEndHandler(current) {
@@ -1105,18 +926,10 @@ $(document).ready(function () {
                 id: rects.length,
                 type: 'r',
                 rect: finalRect,
-                lText: currentRect.lText.clone(),
-                lOff: currentRect.lOff,
-                bText: currentRect.bText.clone(),
-                bOff: currentRect.bOff,
-                hover: false
+                text: currentRect.text
             };
             lastOverlay = obj;
-            obj.lText.visible = false;
-            obj.bText.visible = false;
             currentRect.rect.remove();
-            currentRect.lText.remove();
-            currentRect.bText.remove();
 
             // Open annotation menu
             resetAnnotationModal();
@@ -1176,6 +989,123 @@ $(document).ready(function () {
             text: text,
             offset: new Point(xOff, yOff),
         };
+
+    }
+
+    function createDivText() {
+        var card = document.createElement("div");
+        $(card).width("70px");
+        $(card).addClass("card");
+        $(card).addClass("is-dark");
+        var deleteButton = document.createElement("button");
+        $(deleteButton).addClass("card-control");
+        $(deleteButton).addClass("delete-button");
+        var delIcon = document.createElement("i");
+        $(delIcon).addClass("fas");
+        $(delIcon).addClass("fa-times");
+        $(deleteButton).append(delIcon);
+        
+        var editButton = document.createElement("button");
+        $(editButton).addClass("card-control");
+        $(editButton).addClass("edit-button");
+        var editIcon = document.createElement("i");
+        $(editIcon).addClass("fas");
+        $(editIcon).addClass("fa-edit");
+        $(editButton).append(editIcon);
+        $(card).append(deleteButton);
+        $(card).append(editButton);
+
+        $(editButton).hide();
+        $(deleteButton).hide();
+
+        var cardContent = document.createElement("div");
+        $(cardContent).css({"padding":  "0", "text-align": "center"});
+        $(cardContent).addClass("card-content");
+        $(card).append(cardContent);
+        var p = document.createElement("p");
+        $(p).addClass("measurement");
+        var annote = document.createElement("p");
+        $(annote).addClass("annotation-text");
+        $(cardContent).append(annote);
+        $(cardContent).append(p);
+        $("#openseadragon-viewer").append(card);
+        return card;
+    }
+
+    function updateLineCardDivText(card, start, end) {
+        var rot = angleFromHorizontal(start, end);
+        
+        var content = converterToSI(start.getDistance(end));
+        $(card).children(".card-content").children(".measurement").html(content);
+        // If in first or third quadrand
+        if ((end.x > start.x && end.y < start.y) || (end.x < start.x && end.y > start.y)) {
+            rot = rot * -1;
+        }
+        var mid = midPoint(start, end).subtract(new Point(0, stroke_width));
+        var pos = view.projectToView(mid);
+        var textRot = rot * (Math.PI / 180.0);
+        
+        var w = ($(card).width() / 2.0);
+        var h = $(card).height();
+        var xOff = w * Math.cos(textRot) - h * Math.sin(textRot);
+        var yOff = w * Math.sin(textRot) + h * Math.cos(textRot);
+
+        var off = new Point(xOff, yOff);
+        pos = pos.subtract(off);
+        
+
+        $(card).css({
+            "position": "absolute",
+            "top": pos.y + $(".navbar").height(),
+            "left": pos.x,
+            "transform-origin": "top left",
+            "-ms-transform": "rotate("+rot+"deg)",
+            "transform": "rotate("+rot+"deg)",
+        });
+
+    }
+
+    function updateRectCardDivText(card, topLeft, topRight, bottomRight) {
+        
+        var content = converterToSI(topLeft.getDistance(topRight)) +"X"+converterToSI(topRight.getDistance(bottomRight));
+        $(card).children(".card-content").children(".measurement").html(content);
+        
+        var mid = midPoint(topLeft, topRight);
+        var pos = view.projectToView(mid);
+        
+        var w = ($(card).width() / 2.0);
+        var h = $(card).height();
+
+        var off = new Point(w, h);
+        pos = pos.subtract(off);
+        
+
+        $(card).css({
+            "position": "absolute",
+            "top": pos.y + $(".navbar").height(),
+            "left": pos.x,
+        });
+
+    }
+
+    function updateCircleCardDivText(card, position, radius) {
+        
+        var content = "r="+converterToSI(radius);
+        $(card).children(".card-content").children(".measurement").html(content);
+        
+        var pos = view.projectToView(position);
+        
+        var w = ($(card).width() / 2.0);
+
+        var off = new Point(w, 0);
+        pos = pos.subtract(off);
+        
+
+        $(card).css({
+            "position": "absolute",
+            "top": pos.y + $(".navbar").height(),
+            "left": pos.x,
+        });
 
     }
 

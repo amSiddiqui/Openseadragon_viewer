@@ -30,6 +30,24 @@ html, body {
     z-index: 100;
 }
 
+.card  {
+    width: 150px;
+}
+
+#openseadragon-viewer > .card > .card-content {
+    padding: 0;
+    padding-top: 15px;
+    padding-right: 10px;
+}
+
+.measurement {
+    font-size: 0.8rem;
+}
+
+.annotation-text {
+    line-height: 1.1rem;
+}
+
 .toolbar-container {
     width: 100%;
     height: 100%;
@@ -224,14 +242,22 @@ html, body {
     font-size: 25px;
 }
 
-.card-close {
+.card-control {
     float: right;
     margin-top: 5px;
     margin-right: 5px;
+    border-radius: 100%;
+    width: 20px;
+    height: 20px;
+    border: none;
 }
 
-.card-footer-item {
-    padding: 6px;
+.edit-button {
+    background-color: #ffdd57;
+}
+
+.delete-button {
+    background-color: #fa4a5f;
 }
 
 @media screen and (max-width: 1160px) {

@@ -5,26 +5,30 @@
     border: none;
 }
 
-.card-close {
+.card-control {
     float: right;
     margin-top: 5px;
     margin-right: 5px;
+    border-radius: 100%;
+    width: 20px;
+    height: 20px;
+    border: none;
 }
 
-#edit-btn {
+#edit-button {
     background-color: #ffdd57;
 }
 
-#delete-btn {
+#delete-button {
     background-color: #fa4a5f;
 }
 
-.card {
-    width: 200px;
-    position: absolute;
-    top: 601px;
+.card  {
+    width: 150px;
 }
 
-.card-footer-item {
-    padding: 6px;
+.card > .card-content {
+    padding: 0;
+    padding-top: 15px;
+    padding-right: 10px;
 }
