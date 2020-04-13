@@ -50,13 +50,11 @@ $(document).ready(function () {
     var rotator; // Stores the Rotation slider data
     var annotation_border_picker; // Stores the Overlay Border color data
     var default_border_color = "red";
-    var annotation_font_picker; // Stores the Overlay Background color data
-    var default_font_color = "black";
+    var annotation_text_background_picker; // Stores the Overlay Background color data
     var editMode = false;
     var currentEditingOverlay = null;
     var paperOverlay;
     var viewerOpen = false;
-    var font_color = default_font_color;
     var stroke_color = default_border_color;
     var stroke_width = 4;
     var selectingColor = false;
@@ -365,70 +363,19 @@ $(document).ready(function () {
     });
 
     // Overlay Background
-    annotation_font_picker = Pickr.create({
-        el: '#annotation-font-picker',
-        theme: 'nano', // or 'monolith', or 'nano'
-        default: default_font_color,
-
-        swatches: [
-            'red',
-            'yellow',
-            'green',
-            'black',
-            'orange',
-            'purple',
-            'gray'
-        ],
-
-        components: {
-
-            // Main components
-            preview: true,
-            hue: true,
-
-            // Input / output Options 
-            interaction: {
-                hex: false,
-                rgba: false,
-                hsla: false,
-                hsva: false,
-                cmyk: false,
-                input: false,
-                clear: true,
-                save: true
-            }
-        }
-    });
-
-    // Color picker events
-    annotation_font_picker.on('save', function (event) {
-        annotation_font_picker.hide();
-        font_color = annotation_font_picker.getColor().toHEXA().toString();
-    });
-
+    
     annotation_border_picker.on('save', function (event) {
         annotation_border_picker.hide();
         stroke_color = annotation_border_picker.getColor().toHEXA().toString();
     });
 
-    annotation_font_picker.on('change', function (event) {
-        font_color = annotation_font_picker.getColor().toHEXA().toString();
-    });
-
+    
     annotation_border_picker.on('change', function (event) {
         stroke_color = annotation_border_picker.getColor().toHEXA().toString();
     });
 
-    annotation_font_picker.on('show', function (event) {
-        selectingColor = true;
-    });
-
     annotation_border_picker.on('show', function (event) {
         selectingColor = true;
-    });
-
-    annotation_font_picker.on('hide', function (event) {
-        selectingColor = false;
     });
 
     annotation_border_picker.on('hide', function (event) {
@@ -1009,43 +956,7 @@ $(document).ready(function () {
         return c;
     }
 
-    function createText(start, end, sl, su) {
-        var yOff = -1;
-        var xOff = 1;
-        var z = view.zoom;
-        var rot = angleFromHorizontal(start, end);
-        // If in first or third quadrand
-        if ((end.x > start.x && end.y < start.y) || (end.x < start.x && end.y > start.y)) {
-            rot = rot * -1;
-            xOff = xOff * -1;
-        }
-
-        var offset = 100.0 / z;
-        offset = Math.min(30.0, offset);
-        offset = Math.max(5.0, offset);
-        var textRot = rot * (Math.PI / 180.0);
-        var off = new Point(Math.abs(Math.sin(textRot)) * offset * xOff, Math.abs(Math.cos(textRot)) * offset * yOff);
-
-        var text = new PointText(midPoint(start, end).add(off));
-        text.justification = 'center';
-        text.fillColor = font_color;
-        text.rotation = rot;
-        text.fontFamily = 'sans serif';
-
-        var scaling = 1.0 / z;
-        // scaling = Math.max(sl, scaling);
-        // scaling = Math.min(su, scaling);
-        text.scaling = new Point(scaling, scaling);
-        text.fontWeight = 600;
-
-        text.content = converterToSI(start.getDistance(end));
-        return {
-            text: text,
-            offset: new Point(xOff, yOff),
-        };
-
-    }
-
+    
     function createDivText() {
         var card = document.createElement("div");
         $(card).width("70px");
