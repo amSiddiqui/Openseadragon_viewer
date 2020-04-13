@@ -63,6 +63,7 @@ $(document).ready(function () {
     var prevZoom;
     var viewZoom;
     var rotating = false;
+    var showingAnnotation = true;
 
 
 
@@ -439,6 +440,59 @@ $(document).ready(function () {
         stroke_width = stroke_width / viewZoom;
     });
 
+    $("#annotation-hide-button").click(function() {
+        var i;
+        if (showingAnnotation) {
+            $(this).attr('title', 'Show Annotation');
+            $(this).children("svg").remove();
+            i = document.createElement("i");
+            $(i).addClass("far");
+            $(i).addClass("fa-eye-slash");
+            $(this).append(i);
+            lines.forEach(function(line) {
+                line.line.visible = false;
+                $(line.text).hide();
+            });
+
+            rects.forEach(function(rect) {
+                rect.rect.visible = false;
+                $(rect.text).hide();
+            });
+
+            circles.forEach(function(circle) {
+                circle.circle.visible = false;
+                $(circle.text).hide();
+            });
+
+
+        }else{
+            $(this).attr('title', 'Hide Annotation');
+            $(this).children("svg").remove();
+            i = document.createElement("i");
+            $(i).addClass("far");
+            $(i).addClass("fa-eye");
+            $(this).append(i);
+
+            lines.forEach(function(line) {
+                line.line.visible = true;
+                $(line.text).show();
+            });
+
+            rects.forEach(function(rect) {
+                rect.rect.visible = true;
+                $(rect.text).show();
+            });
+
+            circles.forEach(function(circle) {
+                circle.circle.visible = true;
+                $(circle.text).show();
+            });
+
+            
+        }
+        showingAnnotation = !showingAnnotation;
+    });
+
 
     // Helper Functions
     function updateRotation(deg) {
@@ -749,7 +803,7 @@ $(document).ready(function () {
         rects.forEach(function(rect) {
             updateRectCardDivText(rect.text, rect.rect.strokeBounds.topLeft, rect.rect.strokeBounds.topRight, rect.rect.strokeBounds.bottomRight);
         });
-        circle.forEach(function(circle) {
+        circles.forEach(function(circle) {
             updateCircleCardDivText(circle.text, circle.circle.position.add(new Point(0, radius + stroke_width)), circle.circle.radius);
         });
     };
