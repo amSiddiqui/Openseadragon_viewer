@@ -43,6 +43,9 @@ html, body {
     box-shadow: 2px 6px 6px #ccc; 
 }
 
+.cursor-move {
+    cursor: move;
+}
 
 .navbar {
     padding-left: 30px;
@@ -156,6 +159,18 @@ html, body {
     padding-left: 0;
 }
 
+.navbar-brand {
+    margin-right: 20px;
+    margin-left: 20px;
+}
+
+.navbar-brand > a.navbar-item {
+    padding: 0;
+}
+
+.navbar-item img {
+    max-height: 100px;
+}
 
 #zoomin-btn:active, #zoomout-btn:active{
     background-color: hsl(141, 53%, 53%);
@@ -256,13 +271,38 @@ html, body {
     }
 }
 
-@media screen and (max-width: 1000px) {
-    .toolbar-container button {display: none}
-    .toolbar-container div {display: none;}
-    #hamburger {
-        position: absolute;
+@media screen and (max-width: 1024px) {
+    .navbar-menu {
         display: block;
-        right: 0;
+    }
+    .navbar-menu {
+        width: 200px;
+        margin-left: -25px;
+    }
+
+    #rotation-selector {
+        margin-left: 20px;
+    }
+    #rotation-dropdown-button {
+        display: none;
+    }
+    .rotate-preset-container {
+        display: none;
+    }
+    #draw-button {
+        display: none;
+    }
+    #draw-menu-dropdown > .navbar-dropdown {
+        margin-left: -20px;
+    }
+    .navbar-end {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 1024px) and (max-height: 900px) {
+    .zoom-button-container {
+        display: none;
     }
 }
 
@@ -271,6 +311,7 @@ html, body {
         width: 250px;
     }
 }
+
 
 
 @media (max-height: 600px) {

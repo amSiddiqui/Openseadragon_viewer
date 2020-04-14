@@ -50,7 +50,6 @@ $(document).ready(function () {
     var rotator; // Stores the Rotation slider data
     var annotation_border_picker; // Stores the Overlay Border color data
     var default_border_color = "red";
-    var annotation_text_background_picker; // Stores the Overlay Background color data
     var editMode = false;
     var currentEditingOverlay = null;
     var paperOverlay;
@@ -58,10 +57,10 @@ $(document).ready(function () {
     var stroke_color = default_border_color;
     var stroke_width = 4;
     var selectingColor = false;
-    var prevZoom;
     var viewZoom;
     var rotating = false;
     var showingAnnotation = true;
+    var hitTest = null;
 
 
 
@@ -75,6 +74,8 @@ $(document).ready(function () {
     var startPoint = null;
     var currentLine = null;
     var lines = [];
+
+    var lineDB = [];
 
     var currentRect = null;
     var rects = [];
@@ -124,7 +125,7 @@ $(document).ready(function () {
             viewerOpen = true;
             stroke_width = stroke_width / paper.view.zoom;
             viewZoom = paper.view.zoom;
-            prevZoom = viewer.viewport.getHomeZoom();
+            loadAnnotations();
         }, 500);
 
         viewer.drawer.viewer = viewer;
@@ -221,7 +222,6 @@ $(document).ready(function () {
                     break;
             }
         });
-        prevZoom = z;
     });
 
     viewer.addHandler("rotate", function (event) {
@@ -463,6 +463,8 @@ $(document).ready(function () {
             }
             $(overlay.text).css("width", newWidth+"px");
         }
+    
+        
         if (overlay.type == 'l') {
             updateLineCardDivText(overlay.text, overlay.line.firstSegment.point, overlay.line.lastSegment.point);
         }
@@ -554,6 +556,23 @@ $(document).ready(function () {
 
     function closeAnnotation() {
         $("canvas").removeClass('cursor-crosshair');
+    }
+
+    function loadAnnotations() {
+        // Load All lines
+        lineDB.forEach(function(line) {
+            var l = {
+                id: lines.length,
+                type: 'l',
+                annotation: line.annotation,
+                line: Path.importJSON(line.line),
+                text: createDivText()
+            };
+            project.activeLayer.addChild(l.line);
+            lines.push(l);
+            addOverlay(l.annotation, l);
+        });
+        
     }
 
     function resetAnnotationModal() {
@@ -711,14 +730,7 @@ $(document).ready(function () {
         if (editMode) {
             updateAnnotation(text);
         } else {
-            if (lastOverlay.type == 'r') {
-                rects.push(lastOverlay);
-            } else if (lastOverlay.type == 'c') {
-                circles.push(lastOverlay);
-            } else if (lastOverlay.type == 'l') {
-                lines.push(lastOverlay);
-            }
-            addOverlay(text, lastOverlay);
+            
         }
         editMode = false;
         closeAnnotation();
@@ -775,6 +787,26 @@ $(document).ready(function () {
         var transformedPoint = view.viewToProject(new Point(event.position.x, event.position.y));
         startPoint = transformedPoint;
         switch (drawMode) {
+            case 0:
+                hitTest = null;
+                var tPoint = view.viewToProject(new Point(event.position.x, event.position.y));
+                var hitTestResult = project.hitTest(tPoint);
+                if (hitTestResult && hitTestResult.item instanceof Shape){
+                    if (hitTestResult.item.type == 'circle') {
+                        circles.forEach(function(circle) {
+                            if (circle.circle === hitTestResult.item) {
+                                hitTest = circle;
+                            }
+                        });
+                    }else if (hitTestResult.item.type == 'rectangle') {
+                        rects.forEach(function(rect) {
+                            if (rect.rect === hitTestResult.item) {
+                                hitTest = rect;
+                            }
+                        });
+                    }
+                }
+                break;
             case 1:
                 linePressHandler();
                 break;
@@ -792,6 +824,22 @@ $(document).ready(function () {
     function dragHandler(event) {
         var tPoint = view.viewToProject(new Point(event.position.x, event.position.y));
         switch (drawMode) {
+            case 0:
+                if (hitTest) {
+                    var tPoint1 = view.viewToProject(new Point(0, 0));
+                    var tPoint2 = view.viewToProject(new Point(event.delta.x, event.delta.y));
+                    
+                    if (hitTest.type == 'r') {
+                        hitTest.rect.position = hitTest.rect.position.add(tPoint2.subtract(tPoint1));
+                        updateRectCardDivText(hitTest.text, hitTest.rect.strokeBounds.topLeft, hitTest.rect.strokeBounds.topRight, hitTest.rect.strokeBounds.bottomRight);
+                    }else if (hitTest.type == 'c') {
+                        hitTest.circle.position = hitTest.circle.position.add(tPoint2.subtract(tPoint1));
+                        var radius = hitTest.circle.radius;
+                        updateCircleCardDivText(hitTest.text, hitTest.circle.position.add(new Point(0, radius + stroke_width)), radius);
+                    }
+                    viewer.setMouseNavEnabled(false);
+                }
+                break;
             case 1:
                 lineDragHandler(tPoint);
                 break;
@@ -809,6 +857,12 @@ $(document).ready(function () {
     function dragEndHandler(event) {
         var tPoint = view.viewToProject(new Point(event.position.x, event.position.y));
         switch (drawMode) {
+            case 0:
+                if (hitTest) {
+                    viewer.setMouseNavEnabled(true);
+                }
+                hitTest = null;
+                break;
             case 1:
                 lineDragEndHandler(tPoint);
                 break;
@@ -824,6 +878,7 @@ $(document).ready(function () {
 
         startPoint = null;
         changeDrawMode(0);
+        
     }
 
 
@@ -851,16 +906,15 @@ $(document).ready(function () {
             line: currentLine.line.clone(),
             text: currentLine.text,
             id: lines.length,
-            hover: false,
             annotation: '',
             type: 'l'
         };
-        lastOverlay = dup;
-
         currentLine.line.remove();
         currentLine = null;
-        $("#annotation-modal").addClass('is-active');
-        $("#annotation-save-btn").val('l');
+
+        lastOverlay = dup;
+        lines.push(lastOverlay);        
+        addOverlay("", lastOverlay);
     }
 
     function circlePressHandler() {
@@ -897,8 +951,14 @@ $(document).ready(function () {
 
             lastOverlay = obj;
             currentCircle.circle.remove();
-            $("#annotation-modal").addClass('is-active');
-            $("#annotation-save-btn").val('c');
+            circles.push(lastOverlay);
+            addOverlay("", lastOverlay);
+            lastOverlay.circle.onMouseEnter = function() {
+                $("#page").addClass("cursor-move");
+            };
+            lastOverlay.circle.onMouseLeave = function() {
+                $("#page").removeClass("cursor-move");
+            };
         }
     }
 
@@ -933,10 +993,17 @@ $(document).ready(function () {
             currentRect.rect.remove();
 
             // Open annotation menu
-            resetAnnotationModal();
-            $("#annotation-modal").addClass("is-active");
-            $("#annotation-save-btn").val('r');
+            rects.push(lastOverlay);
+            addOverlay("", lastOverlay);
+
+            lastOverlay.rect.onMouseEnter = function() {
+                $("#page").addClass("cursor-move");
+            };
+            lastOverlay.rect.onMouseLeave = function() {
+                $("#page").removeClass("cursor-move");
+            };
         }
+        
     }
 
 
@@ -956,12 +1023,10 @@ $(document).ready(function () {
         return c;
     }
 
-    
     function createDivText() {
         var card = document.createElement("div");
         $(card).width("70px");
         $(card).addClass("card");
-        $(card).addClass("is-dark");
         var deleteButton = document.createElement("button");
         $(deleteButton).addClass("card-control");
         $(deleteButton).addClass("delete-button");
